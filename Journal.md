@@ -20,3 +20,6 @@
 ## 19.02
 - `stake()`
 - look into arbitrage
+- https://uk.mathworks.com/discovery/statistical-arbitrage.html -> good for future studies, maybe
+- https://www.litefinance.org/blog/for-beginners/arbitrage-trading/ -> not too relevant tbh
+- decided to go along with the flow and just use the MvX API for now
