@@ -15,4 +15,8 @@
 - as a side note, I can also create only one `MapMapper` to contain data for both staked and winnings and it might look cleaner, but my approach is more efficient
 - added storage to the sc
 - created repo
+- added a few basic owner interactions to the sc
 
+## 19.02
+- `stake()`
+- look into arbitrage
