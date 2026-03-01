@@ -23,3 +23,33 @@
 - https://uk.mathworks.com/discovery/statistical-arbitrage.html -> good for future studies, maybe
 - https://www.litefinance.org/blog/for-beginners/arbitrage-trading/ -> not too relevant tbh
 - decided to go along with the flow and just use the MvX API for now
+
+# 23.02
+- a bit of research on the information I need to run my arbitrage bot
+- relevant data:
+	- pool reserves
+	- swap fee
+	- slippage
+	- gas costs
+	- execution latency (not that important for devnet, but might be if going mainnet)
+- [here](https://docs.multiversx.com/developers/tutorials/dex-walkthrough/#swap-tokens-fixed-input) we can see formulas for the fees: `rI∗rO=(rI+(1−f)∗aI)∗(rO−aO)`
+- would be nice to look into `multi_pair_swap` of the Router SC (dex > router > src > multi_pair_swap.rs)
+
+# 01.03
+- found out how to get info about trades:
+	- POST at `https://devnet-gateway.multiversx.com/vm-values/int` endpoint
+	- add the SC address in the body and the function name
+	- `getReserve` with a hex encoded token ID as argument for getting the token amount inside the LP
+	- `getTotalFeePercent` for the swap fee (from what I saw, it's usually 0.3% or 1%)
+	- example body: 
+	```
+	{
+  		"scAddress": "erd1qqqqqqqqqqqqqpgqus9r9gwtg24a9fvzv743hgydecpkxs8q0n4szz2az0",
+  		"funcName": "getReserve",
+  		"args": ["5745474c442d613238633539"]
+	}
+	```
+	- with this data and the swap formula, we can accurately calculate the output amount for a given input (tested on ITHEUM-WEGLD pair and value matches the one on xExchange)
+- the system should work as such:
+	- rarely, maybe once a day, a script will look out for new LPs
+	- the main script will run a loop each second, will use the LP addresses from the other script and fetch reserves and fees, create the graph and execute the trades via the SC
