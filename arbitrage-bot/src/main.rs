@@ -76,7 +76,11 @@ fn swap(amount_in: &BigUint, edge: &Edge) -> BigUint {
 fn simulate_triangle(amount_in: &BigUint, e1: &Edge, e2: &Edge, e3: &Edge) -> BigUint {
     let amount_after_e1 = swap(amount_in, e1);
     let amount_after_e2 = swap(&amount_after_e1, e2);
-    swap(&amount_after_e2, e3) - amount_in
+    if &swap(&amount_after_e2, e3) > amount_in {
+        swap(&amount_after_e2, e3) - amount_in
+    } else {
+        BigUint::zero()
+    }
 }
 
 #[tokio::main]
@@ -270,5 +274,40 @@ async fn main() {
     }
 
     let graph = build_graph(&liquidity_pools);
-    println!("Graph: {:#?}", graph);
+    println!("Graph len: {:#?}", graph.len());
+
+    let token1: String = "USDC-350c4e".to_string();
+    let amount_in = BigUint::from(1_000_000u32);
+    let binding = Vec::new();
+    let edges1 = graph.get(&token1).unwrap_or(&binding);
+
+    for edge1 in edges1 {
+        let token2 = &edge1.out_id;
+        if let Some(edges2) = graph.get(token2) {
+            for edge2 in edges2 {
+                let token3 = &edge2.out_id;
+                if token3 == &token1 {
+                    continue;
+                }
+                if let Some(edges3) = graph.get(token3) {
+                    for edge3 in edges3 {
+                        if edge3.out_id == *token1 {
+                            let profit = simulate_triangle(&amount_in, edge1, edge2, edge3);
+                            if profit > BigUint::zero() {
+                                println!(
+                                    "Arbitrage opportunity: {} -> {} -> {} -> {} | Profit: {}",
+                                    token1, token2, token3, token1, profit
+                                );
+                            } else {
+                                println!(
+                                    "No arbitrage: {} -> {} -> {} -> {} | Profit: {}",
+                                    token1, token2, token3, token1, profit
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

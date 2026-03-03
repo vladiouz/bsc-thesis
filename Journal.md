@@ -60,4 +60,5 @@
 
 # 03.03
 - wrote `swap` and `simulate_triangle` functions, now looking for finding triangles
-- just for optimization, nodes with degree 1 will be ignored
+- just for optimization, nodes with degree 1 will be ignored (todo later)
+- wrote a basic script for triangular arbitrage using USDC as the base currrency
