@@ -53,3 +53,11 @@
 - the system should work as such:
 	- rarely, maybe once a day, a script will look out for new LPs
 	- the main script will run a loop each second, will use the LP addresses from the other script and fetch reserves and fees, create the graph and execute the trades via the SC
+
+# 02.03
+- I am going to write the graph creation script
+- retrieving reserves and fees for all LPs takes 20-25 seconds (probably because of throttling) - I searched and a solution could be to have an observer node, but that will be done later
+
+# 03.03
+- wrote `swap` and `simulate_triangle` functions, now looking for finding triangles
+- just for optimization, nodes with degree 1 will be ignored
