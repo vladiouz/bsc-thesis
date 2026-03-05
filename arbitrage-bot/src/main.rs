@@ -1,4 +1,8 @@
 use hex;
+use multiversx_sdk::{
+    crypto::SigningKeyPair,
+    network::{providers::HttpNetworkProvider, transactions::Transaction},
+};
 use num_bigint::BigUint;
 use num_traits::Zero;
 use reqwest::Client;
@@ -281,6 +285,10 @@ async fn main() {
     let binding = Vec::new();
     let edges1 = graph.get(&token1).unwrap_or(&binding);
 
+    let mut token2_id = String::new();
+    let mut token3_id = String::new();
+    let mut max_profit = BigUint::zero();
+
     for edge1 in edges1 {
         let token2 = &edge1.out_id;
         if let Some(edges2) = graph.get(token2) {
@@ -298,6 +306,11 @@ async fn main() {
                                     "Arbitrage opportunity: {} -> {} -> {} -> {} | Profit: {}",
                                     token1, token2, token3, token1, profit
                                 );
+                                if profit > max_profit {
+                                    max_profit = profit;
+                                    token2_id = token2.clone();
+                                    token3_id = token3.clone();
+                                }
                             } else {
                                 println!(
                                     "No arbitrage: {} -> {} -> {} -> {} | Profit: {}",
@@ -309,5 +322,14 @@ async fn main() {
                 }
             }
         }
+    }
+
+    if max_profit > BigUint::zero() {
+        println!(
+            "Best arbitrage path: {} -> {} -> {} -> {} | Max Profit: {}",
+            token1, token2_id, token3_id, token1, max_profit
+        );
+    } else {
+        println!("No arbitrage opportunities found for {}", token1);
     }
 }

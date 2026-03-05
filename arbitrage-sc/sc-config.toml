@@ -1,0 +1,2 @@
+[[proxy]]
+path = "interactor/src/arbitrage_sc_proxy.rs"

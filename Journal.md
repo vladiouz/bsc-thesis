@@ -62,3 +62,8 @@
 - wrote `swap` and `simulate_triangle` functions, now looking for finding triangles
 - just for optimization, nodes with degree 1 will be ignored (todo later)
 - wrote a basic script for triangular arbitrage using USDC as the base currrency
+- **to do a cleaner job in calling SCs from my SC, I can look at caller-sc project in my MvX folder**
+
+# 05.03
+- added the `execute_trades` function in the SC (in a a simpler state for now) to make sure that the SC can call the `swapTokensFixedInput` in the LPs and I tested it with the interactor
+- next up: add SC logic to complete the triangle, call from bot, optimizations

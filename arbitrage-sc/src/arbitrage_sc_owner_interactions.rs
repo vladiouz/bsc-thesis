@@ -31,7 +31,18 @@ pub trait ArbitrageScOwnerInteractions: arbitrage_sc_storage::ArbitrageScStorage
 
     #[only_owner]
     #[endpoint(executeTrades)]
-    fn execute_trades(&self) {
-        // to impl
+    fn execute_trades(
+        &self,
+        token_out: TokenIdentifier,
+        min_amount_out: BigUint,
+        sc: ManagedAddress,
+    ) {
+        self.tx()
+            .to(sc)
+            .raw_call("swapTokensFixedInput")
+            .argument(&token_out)
+            .argument(&min_amount_out)
+            .with_esdt_transfer((self.staked_token_id().get(), 0, BigUint::from(1_000_000u32)))
+            .async_call_and_exit();
     }
 }
