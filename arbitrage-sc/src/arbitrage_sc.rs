@@ -7,6 +7,7 @@ pub mod arbitrage_sc_interactions;
 pub mod arbitrage_sc_owner_interactions;
 pub mod arbitrage_sc_requirements;
 pub mod arbitrage_sc_storage;
+pub mod pair_proxy;
 
 #[multiversx_sc::contract]
 pub trait ArbitrageSc:

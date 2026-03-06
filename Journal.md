@@ -67,3 +67,8 @@
 # 05.03
 - added the `execute_trades` function in the SC (in a a simpler state for now) to make sure that the SC can call the `swapTokensFixedInput` in the LPs and I tested it with the interactor
 - next up: add SC logic to complete the triangle, call from bot, optimizations
+
+# 06.03
+- updated the SC function to receive more trades (basically like the Router SC) -> if it's not going to work, then I'll just call a method in the router SC
+- tested the endpoint on chain and it worked brilliant, transaction is right [here](https://devnet-explorer.multiversx.com/transactions/d77f3d61946fcf0ce99455e95638e1abf286ccd89c8fabfe827fd142913e223d)
+- next: call from bot, finish the SC, optimizations, frontend

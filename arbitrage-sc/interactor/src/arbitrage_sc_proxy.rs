@@ -171,21 +171,15 @@ where
     }
 
     pub fn execute_trades<
-        Arg0: ProxyArg<EsdtTokenIdentifier<Env::Api>>,
-        Arg1: ProxyArg<BigUint<Env::Api>>,
-        Arg2: ProxyArg<ManagedAddress<Env::Api>>,
+        Arg0: ProxyArg<MultiValueEncoded<Env::Api, MultiValue2<ManagedAddress<Env::Api>, EsdtTokenIdentifier<Env::Api>>>>,
     >(
         self,
-        token_out: Arg0,
-        min_amount_out: Arg1,
-        sc: Arg2,
+        swaps: Arg0,
     ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
         self.wrapped_tx
             .payment(NotPayable)
             .raw_call("executeTrades")
-            .argument(&token_out)
-            .argument(&min_amount_out)
-            .argument(&sc)
+            .argument(&swaps)
             .original_result()
     }
 

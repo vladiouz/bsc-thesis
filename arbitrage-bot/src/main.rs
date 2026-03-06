@@ -1,8 +1,8 @@
 use hex;
-use multiversx_sdk::{
-    crypto::SigningKeyPair,
-    network::{providers::HttpNetworkProvider, transactions::Transaction},
-};
+// use multiversx_sdk::{
+//     crypto::SigningKeyPair,
+//     network::{providers::HttpNetworkProvider, transactions::Transaction},
+// };
 use num_bigint::BigUint;
 use num_traits::Zero;
 use reqwest::Client;
@@ -37,7 +37,7 @@ impl LiquidityPool {
 
 #[derive(Debug)]
 struct Edge {
-    in_id: String,
+    sc_address: String,
     out_id: String,
     in_reserve: BigUint,
     out_reserve: BigUint,
@@ -51,7 +51,7 @@ fn build_graph(pools: &Vec<LiquidityPool>) -> Graph {
 
     for pool in pools {
         graph.entry(pool.base_id.clone()).or_default().push(Edge {
-            in_id: pool.base_id.clone(),
+            sc_address: pool.sc_address.clone(),
             out_id: pool.quote_id.clone(),
             in_reserve: pool.base_reserve.clone(),
             out_reserve: pool.quote_reserve.clone(),
@@ -59,7 +59,7 @@ fn build_graph(pools: &Vec<LiquidityPool>) -> Graph {
         });
 
         graph.entry(pool.quote_id.clone()).or_default().push(Edge {
-            in_id: pool.quote_id.clone(),
+            sc_address: pool.sc_address.clone(),
             out_id: pool.base_id.clone(),
             in_reserve: pool.quote_reserve.clone(),
             out_reserve: pool.base_reserve.clone(),
@@ -289,6 +289,10 @@ async fn main() {
     let mut token3_id = String::new();
     let mut max_profit = BigUint::zero();
 
+    let mut sc_address1 = String::new();
+    let mut sc_address2 = String::new();
+    let mut sc_address3 = String::new();
+
     for edge1 in edges1 {
         let token2 = &edge1.out_id;
         if let Some(edges2) = graph.get(token2) {
@@ -310,6 +314,9 @@ async fn main() {
                                     max_profit = profit;
                                     token2_id = token2.clone();
                                     token3_id = token3.clone();
+                                    sc_address1 = edge1.sc_address.clone();
+                                    sc_address2 = edge2.sc_address.clone();
+                                    sc_address3 = edge3.sc_address.clone();
                                 }
                             } else {
                                 println!(
@@ -328,6 +335,10 @@ async fn main() {
         println!(
             "Best arbitrage path: {} -> {} -> {} -> {} | Max Profit: {}",
             token1, token2_id, token3_id, token1, max_profit
+        );
+        println!(
+            "SC Addresses: {}, {}, {}",
+            sc_address1, sc_address2, sc_address3
         );
     } else {
         println!("No arbitrage opportunities found for {}", token1);

@@ -13,11 +13,13 @@ use std::{
 };
 
 const STATE_FILE: &str = "state.toml";
-const OWNER_ADDRESS: &str = "erd14pp5lcqzf5w0xvmxjka2d2s3d6qs7v97gymkcf37c94gv2rjtrgq4ks6ru";
+const OWNER_ADDRESS: &str = "erd1lxm3nexytnp5jyrctd6h0q4wvmv9pscqvg5exnwuht78yrx5j6qsekgy48";
 const GATEWAY: &str = sdk::gateway::DEVNET_GATEWAY;
 const TOKEN_ID: &str = "USDC-350c4e";
 const TOKEN_OUT_ID: &str = "WEGLD-a28c59";
+const TOKEN_OUT_ID_2: &str = "EBUD-eb3db6";
 const LP_ADDRESS: &str = "erd1qqqqqqqqqqqqqpgqtqfhy99su9xzjjrq59kpzpp25udtc9eq0n4sr90ax6";
+const LP_ADDRESS_2: &str = "erd1qqqqqqqqqqqqqpgqhesqllec0vcxgyr96eu43kuv032sdsk30n4sl42tjc";
 
 pub async fn arbitrage_sc_cli() {
     env_logger::init();
@@ -97,7 +99,7 @@ impl ContractInteract {
 
         interactor.set_current_dir_from_workspace("arbitrage-sc");
         let wallet_address = interactor
-            .register_wallet(Wallet::from_pem_file("wallet.pem").expect("wallet file not found"))
+            .register_wallet(Wallet::from_pem_file("wallet1.pem").expect("wallet file not found"))
             .await;
 
         // Useful in the chain simulator setting
@@ -292,8 +294,19 @@ impl ContractInteract {
 
     pub async fn execute_trades(&mut self) {
         let token_out = TokenIdentifier::from_esdt_bytes(TOKEN_OUT_ID);
-        let min_amount_out = BigUint::<StaticApi>::from(1u128);
         let sc = Bech32Address::from_bech32_string(LP_ADDRESS.to_string());
+        let token_out_2 = TokenIdentifier::from_esdt_bytes(TOKEN_OUT_ID_2);
+        let sc_2 = Bech32Address::from_bech32_string(LP_ADDRESS_2.to_string());
+
+        let mut swaps = MultiValueEncoded::new();
+        swaps.push(MultiValue2::from((
+            ManagedAddress::from_address(&sc.address),
+            token_out.clone(),
+        )));
+        swaps.push(MultiValue2::from((
+            ManagedAddress::from_address(&sc_2.address),
+            token_out_2.clone(),
+        )));
 
         let response = self
             .interactor
@@ -302,7 +315,7 @@ impl ContractInteract {
             .to(self.state.current_address())
             .gas(30_000_000u64)
             .typed(arbitrage_sc_proxy::ArbitrageScProxy)
-            .execute_trades(token_out, min_amount_out, sc)
+            .execute_trades(swaps)
             .returns(ReturnsResultUnmanaged)
             .run()
             .await;
@@ -313,7 +326,7 @@ impl ContractInteract {
     pub async fn stake(&mut self) {
         let token_id = String::from(TOKEN_ID);
         let token_nonce = 0u64;
-        let token_amount = BigUint::<StaticApi>::from(900_000u128);
+        let token_amount = BigUint::<StaticApi>::from(200_000u128);
 
         let response = self
             .interactor
@@ -366,6 +379,6 @@ async fn test_execute_trades() {
     // interact.deploy().await;
     // interact.set_staked_token().await;
     // interact.unpause().await;
-    interact.stake().await;
+    // interact.stake().await;
     interact.execute_trades().await;
 }
