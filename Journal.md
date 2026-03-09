@@ -72,3 +72,6 @@
 - updated the SC function to receive more trades (basically like the Router SC) -> if it's not going to work, then I'll just call a method in the router SC
 - tested the endpoint on chain and it worked brilliant, transaction is right [here](https://devnet-explorer.multiversx.com/transactions/d77f3d61946fcf0ce99455e95638e1abf286ccd89c8fabfe827fd142913e223d)
 - next: call from bot, finish the SC, optimizations, frontend
+
+# 09.03
+- copied the interactor into the `arbitrage-bot` folder and called the `execute_trades` method from the script; currently there might be some issues with the MvX devnet API and no pairs are being retrieved

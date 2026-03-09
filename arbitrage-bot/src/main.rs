@@ -1,18 +1,26 @@
+pub mod interact;
+
 use hex;
-// use multiversx_sdk::{
-//     crypto::SigningKeyPair,
-//     network::{providers::HttpNetworkProvider, transactions::Transaction},
-// };
+use multiversx_sc::chain_core::std::Bech32Address;
+use multiversx_sc::imports::MultiValue2;
+use multiversx_sc::types::ManagedAddress;
+use multiversx_sc::types::MultiValueEncoded;
+use multiversx_sc::types::TokenIdentifier;
+use multiversx_sc_scenario::api::StaticApi;
 use num_bigint::BigUint;
 use num_traits::Zero;
 use reqwest::Client;
+use serde::Serialize;
 use serde_json::Value;
 use serde_json::from_str;
+use serde_json::to_writer;
 use std::collections::HashMap;
+use std::fs::File;
 
 const BASE_API: &str = "https://devnet-api.multiversx.com";
 const BASE_GATEWAY: &str = "https://devnet-gateway.multiversx.com";
 
+#[derive(Serialize, Debug)]
 struct LiquidityPool {
     sc_address: String,
     base_id: String,
@@ -90,6 +98,7 @@ fn simulate_triangle(amount_in: &BigUint, e1: &Edge, e2: &Edge, e3: &Edge) -> Bi
 #[tokio::main]
 async fn main() {
     let client = Client::new();
+    let mut lp_file = File::create("liquidity_pools.json");
 
     let response = client
         .get(format!(
@@ -159,6 +168,7 @@ async fn main() {
     }
 
     println!("Total unique tokens: {}", tokens.len());
+    to_writer(lp_file, &liquidity_pools);
 
     for lp in &mut liquidity_pools {
         let fee_response = client
@@ -340,6 +350,29 @@ async fn main() {
             "SC Addresses: {}, {}, {}",
             sc_address1, sc_address2, sc_address3
         );
+
+        let mut swaps: MultiValueEncoded<
+            StaticApi,
+            MultiValue2<ManagedAddress<StaticApi>, TokenIdentifier<StaticApi>>,
+        > = MultiValueEncoded::new();
+
+        swaps.push(MultiValue2::from((
+            ManagedAddress::from_address(&Bech32Address::from_bech32_string(sc_address1).address),
+            TokenIdentifier::from_esdt_bytes(token2_id),
+        )));
+
+        swaps.push(MultiValue2::from((
+            ManagedAddress::from_address(&Bech32Address::from_bech32_string(sc_address2).address),
+            TokenIdentifier::from_esdt_bytes(token3_id),
+        )));
+
+        swaps.push(MultiValue2::from((
+            ManagedAddress::from_address(&Bech32Address::from_bech32_string(sc_address3).address),
+            TokenIdentifier::from_esdt_bytes(token1),
+        )));
+
+        let mut interact = interact::ContractInteract::new().await;
+        interact.execute_trades(swaps).await;
     } else {
         println!("No arbitrage opportunities found for {}", token1);
     }
