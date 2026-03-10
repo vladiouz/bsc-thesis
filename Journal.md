@@ -24,7 +24,7 @@
 - https://www.litefinance.org/blog/for-beginners/arbitrage-trading/ -> not too relevant tbh
 - decided to go along with the flow and just use the MvX API for now
 
-# 23.02
+## 23.02
 - a bit of research on the information I need to run my arbitrage bot
 - relevant data:
 	- pool reserves
@@ -35,7 +35,7 @@
 - [here](https://docs.multiversx.com/developers/tutorials/dex-walkthrough/#swap-tokens-fixed-input) we can see formulas for the fees: `rI∗rO=(rI+(1−f)∗aI)∗(rO−aO)`
 - would be nice to look into `multi_pair_swap` of the Router SC (dex > router > src > multi_pair_swap.rs)
 
-# 01.03
+## 01.03
 - found out how to get info about trades:
 	- POST at `https://devnet-gateway.multiversx.com/vm-values/int` endpoint
 	- add the SC address in the body and the function name
@@ -54,24 +54,30 @@
 	- rarely, maybe once a day, a script will look out for new LPs
 	- the main script will run a loop each second, will use the LP addresses from the other script and fetch reserves and fees, create the graph and execute the trades via the SC
 
-# 02.03
+## 02.03
 - I am going to write the graph creation script
 - retrieving reserves and fees for all LPs takes 20-25 seconds (probably because of throttling) - I searched and a solution could be to have an observer node, but that will be done later
 
-# 03.03
+## 03.03
 - wrote `swap` and `simulate_triangle` functions, now looking for finding triangles
 - just for optimization, nodes with degree 1 will be ignored (todo later)
 - wrote a basic script for triangular arbitrage using USDC as the base currrency
 - **to do a cleaner job in calling SCs from my SC, I can look at caller-sc project in my MvX folder**
 
-# 05.03
+## 05.03
 - added the `execute_trades` function in the SC (in a a simpler state for now) to make sure that the SC can call the `swapTokensFixedInput` in the LPs and I tested it with the interactor
 - next up: add SC logic to complete the triangle, call from bot, optimizations
 
-# 06.03
+## 06.03
 - updated the SC function to receive more trades (basically like the Router SC) -> if it's not going to work, then I'll just call a method in the router SC
 - tested the endpoint on chain and it worked brilliant, transaction is right [here](https://devnet-explorer.multiversx.com/transactions/d77f3d61946fcf0ce99455e95638e1abf286ccd89c8fabfe827fd142913e223d)
 - next: call from bot, finish the SC, optimizations, frontend
 
-# 09.03
+## 09.03
 - copied the interactor into the `arbitrage-bot` folder and called the `execute_trades` method from the script; currently there might be some issues with the MvX devnet API and no pairs are being retrieved
+- continued work on SC, must check if `execute_trades` is done and them move on to the other functionalities
+
+## 10.03
+- for the last 2 days, the devnet api had some issues with the `/mex/pairs` endpoint so I wrote a python script that fetched me the LPs just in case the api issue won't get solved; it's output is in `contracts.txt`
+- completed (hopefully) the SC with stake, unstake, restake and claim winnings functions
+- next: clean up off-chain code

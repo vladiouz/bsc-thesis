@@ -22,4 +22,8 @@ pub trait ArbitrageScStorage {
     #[view(getDevWinnings)]
     #[storage_mapper("devWinnings")]
     fn dev_winnings(&self) -> SingleValueMapper<BigUint>;
+
+    #[view(getOwnerWinningsPercentage)]
+    #[storage_mapper("ownerWinningsPercentage")]
+    fn owner_winnings_percentage(&self) -> SingleValueMapper<BigUint>;
 }
