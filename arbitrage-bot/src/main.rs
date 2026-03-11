@@ -1,133 +1,29 @@
+pub mod api;
+pub mod config;
+pub mod models;
+pub mod utils;
+
+use crate::api::all_pools::fetch_all_pools;
+use crate::api::pools_data::{get_fee, get_token_reserve};
+use crate::models::graph::build_graph;
+use crate::models::liquidity_pool::LiquidityPool;
+use crate::utils::find_trade_path;
 use arbitrage_interactor::interact;
-use hex;
-use multiversx_sc::chain_core::std::Bech32Address;
-use multiversx_sc::imports::MultiValue2;
-use multiversx_sc::types::ManagedAddress;
-use multiversx_sc::types::MultiValueEncoded;
-use multiversx_sc::types::TokenIdentifier;
-use multiversx_sc_scenario::api::StaticApi;
-use num_bigint::BigUint;
-use num_traits::Zero;
+use config::*;
 use reqwest::Client;
-use serde::Serialize;
-use serde_json::Value;
-use serde_json::from_str;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-
-const BASE_API: &str = "https://devnet-api.multiversx.com";
-const BASE_GATEWAY: &str = "https://devnet-gateway.multiversx.com";
-
-#[derive(Serialize, Debug)]
-struct LiquidityPool {
-    sc_address: String,
-    base_id: String,
-    quote_id: String,
-    base_reserve: BigUint,
-    quote_reserve: BigUint,
-    fee: u32,
-}
-
-impl LiquidityPool {
-    pub fn new(sc_address: String, base_id: String, quote_id: String) -> Self {
-        LiquidityPool {
-            sc_address,
-            base_id,
-            quote_id,
-            base_reserve: Zero::zero(),
-            quote_reserve: Zero::zero(),
-            fee: 1000,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct Edge {
-    sc_address: String,
-    out_id: String,
-    in_reserve: BigUint,
-    out_reserve: BigUint,
-    fee: u32,
-}
-
-type Graph = HashMap<String, Vec<Edge>>;
-
-fn build_graph(pools: &Vec<LiquidityPool>) -> Graph {
-    let mut graph: Graph = HashMap::new();
-
-    for pool in pools {
-        graph.entry(pool.base_id.clone()).or_default().push(Edge {
-            sc_address: pool.sc_address.clone(),
-            out_id: pool.quote_id.clone(),
-            in_reserve: pool.base_reserve.clone(),
-            out_reserve: pool.quote_reserve.clone(),
-            fee: pool.fee,
-        });
-
-        graph.entry(pool.quote_id.clone()).or_default().push(Edge {
-            sc_address: pool.sc_address.clone(),
-            out_id: pool.base_id.clone(),
-            in_reserve: pool.quote_reserve.clone(),
-            out_reserve: pool.base_reserve.clone(),
-            fee: pool.fee,
-        });
-    }
-
-    graph
-}
-
-fn swap(amount_in: &BigUint, edge: &Edge) -> BigUint {
-    let amount_in_after_fee = amount_in * (100_000u32 - edge.fee) / 100_000u32;
-    let numerator = &amount_in_after_fee * &edge.out_reserve;
-    let denominator = &edge.in_reserve + &amount_in_after_fee;
-    numerator / denominator
-}
-
-fn simulate_triangle(amount_in: &BigUint, e1: &Edge, e2: &Edge, e3: &Edge) -> BigUint {
-    let amount_after_e1 = swap(amount_in, e1);
-    let amount_after_e2 = swap(&amount_after_e1, e2);
-    if &swap(&amount_after_e2, e3) > amount_in {
-        swap(&amount_after_e2, e3) - amount_in
-    } else {
-        BigUint::zero()
-    }
-}
 
 #[tokio::main]
 async fn main() {
     let client = Client::new();
 
-    let response = client
-        .get(format!(
-            "{}/mex/pairs?size=500&exchange=xexchange&includeFarms=false",
-            BASE_API
-        ))
-        .send()
-        .await;
-
-    let mut res_json = Value::Null;
-
-    match response {
-        Ok(resp) => match resp.text().await {
-            Ok(text) => res_json = from_str(&text).unwrap(),
-            Err(e) => eprintln!("Body error: {}", e),
-        },
-        Err(e) => eprintln!("Request error: {}", e),
-    }
-
-    // println!("{}", res_json);
-    // println!("{}", res_json.as_array().unwrap().len());
-    let mut tokens: HashMap<&Value, bool> = HashMap::new();
+    let res_json = fetch_all_pools(&client).await;
 
     let mut liquidity_pools: Vec<LiquidityPool> = Vec::new();
 
     for pair in res_json.as_array().unwrap() {
         let sc_address = &pair["address"];
-        // println!("SC address: {}", sc_address);
-
-        // let base_price = &pair["basePrice"];
-        // let quote_price = &pair["quotePrice"];
         let base_id = &pair["baseId"];
         let quote_id = &pair["quoteId"];
 
@@ -136,40 +32,10 @@ async fn main() {
             base_id.as_str().unwrap().to_string(),
             quote_id.as_str().unwrap().to_string(),
         ));
-
-        // check it either one starts with ITHEUM
-
-        // if base_id.as_str().unwrap().starts_with("ITHEUM")
-        //     || quote_id.as_str().unwrap().starts_with("ITHEUM")
-        // {
-        //     println!("Found ITHEUM pair: {}", sc_address);
-        //     break;
-        // }
-
-        // println!("Base Price: {}, Quote Price: {}", base_price, quote_price);
-        // println!("Base ID: {}, Quote ID: {}", base_id, quote_id);
-
-        if tokens.contains_key(base_id) {
-            // println!("Token {} already exists", base_id);
-        } else {
-            tokens.insert(base_id, true);
-        }
-
-        if tokens.contains_key(quote_id) {
-            // println!("Token {} already exists", quote_id);
-        } else {
-            tokens.insert(quote_id, true);
-        }
-
-        // let price = base_price.as_f64().unwrap() / quote_price.as_f64().unwrap();
-        // println!("Price: {}", price);
     }
 
-    println!("Total unique tokens: {}", tokens.len());
-
-    if tokens.len() == 0 {
-        println!("No LPs found via MvX API");
-
+    // /mex/pairs endpoint might be down and return []
+    if liquidity_pools.is_empty() {
         let file = File::open("pairs.csv").unwrap();
         let reader = BufReader::new(file);
 
@@ -189,223 +55,23 @@ async fn main() {
         }
     }
 
-    println!("Total liquidity pools: {}", liquidity_pools.len());
+    println!("Liquidity pools count: {}", liquidity_pools.len());
 
     for lp in &mut liquidity_pools {
-        let fee_response = client
-            .post(format!("{}/vm-values/int", BASE_GATEWAY))
-            .json(&serde_json::json!({
-                "scAddress": lp.sc_address,
-                "funcName": "getTotalFeePercent"
-            }))
-            .send()
-            .await;
-
-        let mut fee_percent: Value = Value::Number(1000.into());
-
-        match fee_response {
-            Ok(resp) => match resp.text().await {
-                Ok(text) => {
-                    let fee_json: Value = from_str(&text).unwrap();
-                    fee_percent = fee_json.as_object().unwrap()["data"]["data"].clone();
-                    // println!(
-                    //     "LP Address: {}, Total Fee Percent: {}",
-                    //     lp.sc_address, fee_percent
-                    // );
-                }
-                Err(e) => eprintln!("Body error: {}", e),
-            },
-            Err(e) => eprintln!("Request error: {}", e),
-        }
-
-        let base_token_response = client
-            .post(format!("{}/vm-values/int", BASE_GATEWAY))
-            .json(&serde_json::json!({
-                "scAddress": lp.sc_address,
-                "funcName": "getReserve",
-                "args": [hex::encode(&lp.base_id)]
-            }))
-            .send()
-            .await;
-
-        let mut base_token_reserve: Value = Value::Null;
-
-        match base_token_response {
-            Ok(resp) => match resp.text().await {
-                Ok(text) => {
-                    let base_token_json: Value = from_str(&text).unwrap();
-                    base_token_reserve =
-                        base_token_json.as_object().unwrap()["data"]["data"].clone();
-                    // println!(
-                    //     "LP Address: {}, Base Token Reserve: {}",
-                    //     lp.sc_address, base_token_reserve
-                    // );
-                }
-                Err(e) => eprintln!("Body error: {}", e),
-            },
-            Err(e) => eprintln!("Request error: {}", e),
-        }
-
-        let mut quote_token_reserve: Value = Value::Null;
-
-        let quote_token_response = client
-            .post(format!("{}/vm-values/int", BASE_GATEWAY))
-            .json(&serde_json::json!({
-                "scAddress": lp.sc_address,
-                "funcName": "getReserve",
-                "args": [hex::encode(&lp.quote_id)]
-            }))
-            .send()
-            .await;
-
-        match quote_token_response {
-            Ok(resp) => match resp.text().await {
-                Ok(text) => {
-                    let quote_token_json: Value = from_str(&text).unwrap();
-                    quote_token_reserve =
-                        quote_token_json.as_object().unwrap()["data"]["data"].clone();
-                    // println!(
-                    //     "LP Address: {}, Quote Token Reserve: {}",
-                    //     lp.sc_address, quote_token_reserve
-                    // );
-                }
-                Err(e) => eprintln!("Body error: {}", e),
-            },
-            Err(e) => eprintln!("Request error: {}", e),
-        }
-
-        // // calculate price
-        // if base_token_reserve.as_str().unwrap() != "0"
-        //     && quote_token_reserve.as_str().unwrap() != "0"
-        // {
-        //     let price = base_token_reserve.as_str().unwrap().parse::<f64>().unwrap()
-        //         / quote_token_reserve
-        //             .as_str()
-        //             .unwrap()
-        //             .parse::<f64>()
-        //             .unwrap();
-        //     println!("LP Address: {}, Price: {}", lp.sc_address, price);
-        // } else {
-        //     println!(
-        //         "LP Address: {}, Price: Cannot calculate due to zero reserve",
-        //         lp.sc_address
-        //     );
-        // }
-
-        lp.base_reserve = base_token_reserve
-            .as_str()
-            .and_then(|s| s.parse::<BigUint>().ok())
-            .unwrap_or_else(BigUint::zero);
-
-        lp.quote_reserve = quote_token_reserve
-            .as_str()
-            .and_then(|s| s.parse::<BigUint>().ok())
-            .unwrap_or_else(BigUint::zero);
-
-        lp.fee = fee_percent
-            .as_str()
-            .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or(1000);
+        lp.fee = get_fee(&client, &lp.sc_address).await;
+        lp.base_reserve = get_token_reserve(&client, &lp.sc_address, &lp.base_id).await;
+        lp.quote_reserve = get_token_reserve(&client, &lp.sc_address, &lp.quote_id).await;
     }
 
     let graph = build_graph(&liquidity_pools);
-    println!("Graph len: {:#?}", graph.len());
+    println!("Graph size: {}", graph.len());
 
-    let token1: String = "USDC-350c4e".to_string();
-    let amount_in = BigUint::from(1_000u32);
-    let binding = Vec::new();
-    let edges1 = graph.get(&token1).unwrap_or(&binding);
-
-    let mut token2_id = String::new();
-    let mut token3_id = String::new();
-
-    let mut token2_amount = BigUint::zero();
-    let mut token3_amount = BigUint::zero();
-    let mut token1_amount = BigUint::zero();
-    let mut max_profit = BigUint::zero();
-
-    let mut sc_address1 = String::new();
-    let mut sc_address2 = String::new();
-    let mut sc_address3 = String::new();
-
-    for edge1 in edges1 {
-        let token2 = &edge1.out_id;
-        if let Some(edges2) = graph.get(token2) {
-            for edge2 in edges2 {
-                let token3 = &edge2.out_id;
-                if token3 == &token1 {
-                    continue;
-                }
-                if let Some(edges3) = graph.get(token3) {
-                    for edge3 in edges3 {
-                        if edge3.out_id == *token1 {
-                            let profit = simulate_triangle(&amount_in, edge1, edge2, edge3);
-                            if profit > BigUint::zero() {
-                                println!(
-                                    "Arbitrage opportunity: {} -> {} -> {} -> {} | Profit: {}",
-                                    token1, token2, token3, token1, profit
-                                );
-                                if profit > max_profit {
-                                    max_profit = profit;
-                                    token2_id = token2.clone();
-                                    token3_id = token3.clone();
-                                    sc_address1 = edge1.sc_address.clone();
-                                    sc_address2 = edge2.sc_address.clone();
-                                    sc_address3 = edge3.sc_address.clone();
-
-                                    token2_amount = swap(&amount_in, edge1);
-                                    token3_amount = swap(&token2_amount, edge2);
-                                    token1_amount = swap(&token3_amount, edge3);
-                                }
-                            } else {
-                                println!(
-                                    "No arbitrage: {} -> {} -> {} -> {} | Profit: {}",
-                                    token1, token2, token3, token1, profit
-                                );
-                            }
-                        }
-                    }
-                }
-            }
+    let swaps_option = find_trade_path(&graph);
+    match swaps_option {
+        Some(swaps) => {
+            let mut interact = interact::ContractInteract::new().await;
+            interact.execute_trades(swaps).await;
         }
-    }
-
-    if max_profit > BigUint::zero() {
-        println!(
-            "Best arbitrage path: {} -> {} -> {} -> {} | Max Profit: {}",
-            token1, token2_id, token3_id, token1, max_profit
-        );
-        println!(
-            "SC Addresses: {}, {}, {}",
-            sc_address1, sc_address2, sc_address3
-        );
-        println!("Expected token2 amount: {}", token2_amount);
-        println!("Expected token3 amount: {}", token3_amount);
-        println!("Expected token1 amount after swap: {}", token1_amount);
-
-        let mut swaps: MultiValueEncoded<
-            StaticApi,
-            MultiValue2<ManagedAddress<StaticApi>, TokenIdentifier<StaticApi>>,
-        > = MultiValueEncoded::new();
-
-        swaps.push(MultiValue2::from((
-            ManagedAddress::from_address(&Bech32Address::from_bech32_string(sc_address1).address),
-            TokenIdentifier::from_esdt_bytes(token2_id),
-        )));
-
-        swaps.push(MultiValue2::from((
-            ManagedAddress::from_address(&Bech32Address::from_bech32_string(sc_address2).address),
-            TokenIdentifier::from_esdt_bytes(token3_id),
-        )));
-
-        swaps.push(MultiValue2::from((
-            ManagedAddress::from_address(&Bech32Address::from_bech32_string(sc_address3).address),
-            TokenIdentifier::from_esdt_bytes(token1),
-        )));
-
-        let mut interact = interact::ContractInteract::new().await;
-        interact.execute_trades(swaps).await;
-    } else {
-        println!("No arbitrage opportunities found for {}", token1);
+        None => println!("No arbitrage path found"),
     }
 }
