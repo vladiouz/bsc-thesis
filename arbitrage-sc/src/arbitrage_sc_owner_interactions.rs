@@ -59,10 +59,10 @@ pub trait ArbitrageScOwnerInteractions:
 
     #[only_owner]
     #[endpoint(executeTrades)]
-    fn execute_trades(&self, swaps: MultiValueEncoded<SwapOperation<Self::Api>>) {
+    fn execute_trades(&self, swaps: MultiValueEncoded<SwapOperation<Self::Api>>, amount: BigUint) {
         self.require_is_active();
 
-        let mut last_amount = BigUint::from(1_000_000u32);
+        let mut last_amount = amount;
         let min_amount_out = BigUint::from(1u32);
         let mut token_in = self.staked_token_id().get();
 

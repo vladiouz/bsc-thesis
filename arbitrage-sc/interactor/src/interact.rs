@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 
-mod arbitrage_sc_proxy;
-pub mod config;
+use crate::arbitrage_sc_proxy;
 
 use multiversx_sc_snippets::imports::*;
 use multiversx_sc_snippets::sdk;
@@ -13,13 +12,13 @@ use std::{
 };
 
 const STATE_FILE: &str = "state.toml";
-const OWNER_ADDRESS: &str = "erd1lxm3nexytnp5jyrctd6h0q4wvmv9pscqvg5exnwuht78yrx5j6qsekgy48";
+// const OWNER_ADDRESS: &str = "erd1lxm3nexytnp5jyrctd6h0q4wvmv9pscqvg5exnwuht78yrx5j6qsekgy48";
 const GATEWAY: &str = sdk::gateway::DEVNET_GATEWAY;
 const TOKEN_ID: &str = "USDC-350c4e";
-const TOKEN_OUT_ID: &str = "WEGLD-a28c59";
-const TOKEN_OUT_ID_2: &str = "EBUD-eb3db6";
-const LP_ADDRESS: &str = "erd1qqqqqqqqqqqqqpgqtqfhy99su9xzjjrq59kpzpp25udtc9eq0n4sr90ax6";
-const LP_ADDRESS_2: &str = "erd1qqqqqqqqqqqqqpgqhesqllec0vcxgyr96eu43kuv032sdsk30n4sl42tjc";
+// const TOKEN_OUT_ID: &str = "WEGLD-a28c59";
+// const TOKEN_OUT_ID_2: &str = "EBUD-eb3db6";
+// const LP_ADDRESS: &str = "erd1qqqqqqqqqqqqqpgqtqfhy99su9xzjjrq59kpzpp25udtc9eq0n4sr90ax6";
+// const LP_ADDRESS_2: &str = "erd1qqqqqqqqqqqqqpgqhesqllec0vcxgyr96eu43kuv032sdsk30n4sl42tjc";
 
 pub async fn arbitrage_sc_cli() {
     env_logger::init();
@@ -40,7 +39,7 @@ pub async fn arbitrage_sc_cli() {
         "unpause" => interact.unpause().await,
         "setStakedToken" => interact.set_staked_token().await,
         "withdrawDevWinnings" => interact.withdraw_dev_winnings().await,
-        "executeTrades" => interact.execute_trades().await,
+        // "executeTrades" => interact.execute_trades().await,
         "stake" => interact.stake().await,
         _ => panic!("unknown command: {}", &cmd),
     }
@@ -95,6 +94,7 @@ pub struct ContractInteract {
 
 impl ContractInteract {
     pub async fn new() -> Self {
+        std::env::set_current_dir(env!("CARGO_MANIFEST_DIR")).unwrap();
         let mut interactor = Interactor::new(GATEWAY).await.use_chain_simulator(false);
 
         interactor.set_current_dir_from_workspace("arbitrage-sc");
@@ -292,28 +292,34 @@ impl ContractInteract {
         println!("Result: {response:?}");
     }
 
-    pub async fn execute_trades(&mut self) {
-        let token_out = TokenIdentifier::from_esdt_bytes(TOKEN_OUT_ID);
-        let sc = Bech32Address::from_bech32_string(LP_ADDRESS.to_string());
-        let token_out_2 = TokenIdentifier::from_esdt_bytes(TOKEN_OUT_ID_2);
-        let sc_2 = Bech32Address::from_bech32_string(LP_ADDRESS_2.to_string());
+    pub async fn execute_trades(
+        &mut self,
+        swaps: MultiValueEncoded<
+            StaticApi,
+            MultiValue2<ManagedAddress<StaticApi>, TokenIdentifier<StaticApi>>,
+        >,
+    ) {
+        // let token_out = TokenIdentifier::from_esdt_bytes(TOKEN_OUT_ID);
+        // let sc = Bech32Address::from_bech32_string(LP_ADDRESS.to_string());
+        // let token_out_2 = TokenIdentifier::from_esdt_bytes(TOKEN_OUT_ID_2);
+        // let sc_2 = Bech32Address::from_bech32_string(LP_ADDRESS_2.to_string());
 
-        let mut swaps = MultiValueEncoded::new();
-        swaps.push(MultiValue2::from((
-            ManagedAddress::from_address(&sc.address),
-            token_out.clone(),
-        )));
-        swaps.push(MultiValue2::from((
-            ManagedAddress::from_address(&sc_2.address),
-            token_out_2.clone(),
-        )));
+        // let mut swaps = MultiValueEncoded::new();
+        // swaps.push(MultiValue2::from((
+        //     ManagedAddress::from_address(&sc.address),
+        //     token_out.clone(),
+        // )));
+        // swaps.push(MultiValue2::from((
+        //     ManagedAddress::from_address(&sc_2.address),
+        //     token_out_2.clone(),
+        // )));
 
         let response = self
             .interactor
             .tx()
             .from(&self.wallet_address)
             .to(self.state.current_address())
-            .gas(30_000_000u64)
+            .gas(45_000_000u64)
             .typed(arbitrage_sc_proxy::ArbitrageScProxy)
             .execute_trades(swaps)
             .returns(ReturnsResultUnmanaged)
@@ -326,7 +332,7 @@ impl ContractInteract {
     pub async fn stake(&mut self) {
         let token_id = String::from(TOKEN_ID);
         let token_nonce = 0u64;
-        let token_amount = BigUint::<StaticApi>::from(200_000u128);
+        let token_amount = BigUint::<StaticApi>::from(1_000_000u128);
 
         let response = self
             .interactor
@@ -373,12 +379,12 @@ async fn test_stake() {
     interact.stake().await;
 }
 
-#[tokio::test]
-async fn test_execute_trades() {
-    let mut interact = ContractInteract::new().await;
-    // interact.deploy().await;
-    // interact.set_staked_token().await;
-    // interact.unpause().await;
-    // interact.stake().await;
-    interact.execute_trades().await;
-}
+// #[tokio::test]
+// async fn test_execute_trades() {
+//     let mut interact = ContractInteract::new().await;
+//     // interact.deploy().await;
+//     // interact.set_staked_token().await;
+//     // interact.unpause().await;
+//     // interact.stake().await;
+//     interact.execute_trades().await;
+// }

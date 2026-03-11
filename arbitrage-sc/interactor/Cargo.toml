@@ -1,5 +1,5 @@
 [package]
-name = "rust-interact"
+name = "arbitrage_interactor"
 version = "0.0.0"
 authors = ["you"]
 edition = "2024"
@@ -10,7 +10,8 @@ name = "rust-interact"
 path = "src/interactor_main.rs"
 
 [lib]
-path = "src/interact.rs"
+name = "arbitrage_interactor"
+path = "src/lib.rs"
 
 [dependencies.arbitrage-sc]
 path = ".."
