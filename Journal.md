@@ -1,3 +1,5 @@
+# Journal
+
 ## 17.02
 
 - generated empty sc with sc-meta
@@ -81,3 +83,26 @@
 - for the last 2 days, the devnet api had some issues with the `/mex/pairs` endpoint so I wrote a python script that fetched me the LPs just in case the api issue won't get solved; it's output is in `contracts.txt`
 - completed (hopefully) the SC with stake, unstake, restake and claim winnings functions
 - next: clean up off-chain code
+
+## 11.03
+- tied bot and SC together properly and launched a few transactions
+- solved a small bug in calculating the fee
+- updated `execute_trades` to receive the amount
+- **NEW IDEA**: use an observer to see LPs swaps and be faster (update only the pairs that had a swap instead of rebuilding the whole graph every time)
+- cleaned the `arbitrage-bot` code and made it readable
+
+# Ideas
+- parallelize reserve fetching
+- use an observer for getching
+- add a nice frontend at the end and deploy it
+- try Bellman Ford instead of triangle and compare the results
+- figure out how to optimize `AMOUNT_IN` for maximum profit
+- try the Router SC and compare results
+- maybe gas optimizations
+
+# Tasks
+- [ ] measure execution time of each big off-chain code block
+- [ ] note the pain points (computationally)
+- [ ] use an observer for LP data fetching
+- [ ] compare observer VS no observer execution time
+- [ ] add a basic gas calculation for trades (kinda low hanging fruit)
