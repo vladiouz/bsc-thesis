@@ -82,6 +82,7 @@ checksum = "5f0e0fee31ef5ed1ba1316088939cea399010ed7731dba877ed44aeb407a75ea"
 name = "arbitrage-bot"
 version = "0.1.0"
 dependencies = [
+ "arbitrage_interactor",
  "hex",
  "multiversx-sc",
  "multiversx-sc-scenario",
@@ -93,6 +94,25 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "toml",
+]
+
+[[package]]
+name = "arbitrage-sc"
+version = "0.0.0"
+dependencies = [
+ "multiversx-sc",
+]
+
+[[package]]
+name = "arbitrage_interactor"
+version = "0.0.0"
+dependencies = [
+ "arbitrage-sc",
+ "clap",
+ "multiversx-sc",
+ "multiversx-sc-snippets",
+ "serde",
  "toml",
 ]
 
@@ -1489,6 +1509,7 @@ checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
  "num-traits",
+ "serde",
 ]
 
 [[package]]

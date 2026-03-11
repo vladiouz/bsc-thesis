@@ -1,5 +1,4 @@
-pub mod interact;
-
+use arbitrage_interactor::interact;
 use hex;
 use multiversx_sc::chain_core::std::Bech32Address;
 use multiversx_sc::imports::MultiValue2;
@@ -13,9 +12,9 @@ use reqwest::Client;
 use serde::Serialize;
 use serde_json::Value;
 use serde_json::from_str;
-use serde_json::to_writer;
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 const BASE_API: &str = "https://devnet-api.multiversx.com";
 const BASE_GATEWAY: &str = "https://devnet-gateway.multiversx.com";
@@ -79,7 +78,7 @@ fn build_graph(pools: &Vec<LiquidityPool>) -> Graph {
 }
 
 fn swap(amount_in: &BigUint, edge: &Edge) -> BigUint {
-    let amount_in_after_fee = amount_in * (1_000_000u32 - edge.fee) / 1_000_000u32;
+    let amount_in_after_fee = amount_in * (100_000u32 - edge.fee) / 100_000u32;
     let numerator = &amount_in_after_fee * &edge.out_reserve;
     let denominator = &edge.in_reserve + &amount_in_after_fee;
     numerator / denominator
@@ -98,7 +97,6 @@ fn simulate_triangle(amount_in: &BigUint, e1: &Edge, e2: &Edge, e3: &Edge) -> Bi
 #[tokio::main]
 async fn main() {
     let client = Client::new();
-    let mut lp_file = File::create("liquidity_pools.json");
 
     let response = client
         .get(format!(
@@ -168,7 +166,30 @@ async fn main() {
     }
 
     println!("Total unique tokens: {}", tokens.len());
-    to_writer(lp_file, &liquidity_pools);
+
+    if tokens.len() == 0 {
+        println!("No LPs found via MvX API");
+
+        let file = File::open("pairs.csv").unwrap();
+        let reader = BufReader::new(file);
+
+        for line in reader.lines().skip(1) {
+            let line = line.unwrap();
+            let parts: Vec<&str> = line.split(',').collect();
+
+            let address = parts[0];
+            let token1 = parts[1];
+            let token2 = parts[2];
+
+            liquidity_pools.push(LiquidityPool::new(
+                address.to_string(),
+                token1.to_string(),
+                token2.to_string(),
+            ));
+        }
+    }
+
+    println!("Total liquidity pools: {}", liquidity_pools.len());
 
     for lp in &mut liquidity_pools {
         let fee_response = client
@@ -291,12 +312,16 @@ async fn main() {
     println!("Graph len: {:#?}", graph.len());
 
     let token1: String = "USDC-350c4e".to_string();
-    let amount_in = BigUint::from(1_000_000u32);
+    let amount_in = BigUint::from(1_000u32);
     let binding = Vec::new();
     let edges1 = graph.get(&token1).unwrap_or(&binding);
 
     let mut token2_id = String::new();
     let mut token3_id = String::new();
+
+    let mut token2_amount = BigUint::zero();
+    let mut token3_amount = BigUint::zero();
+    let mut token1_amount = BigUint::zero();
     let mut max_profit = BigUint::zero();
 
     let mut sc_address1 = String::new();
@@ -327,6 +352,10 @@ async fn main() {
                                     sc_address1 = edge1.sc_address.clone();
                                     sc_address2 = edge2.sc_address.clone();
                                     sc_address3 = edge3.sc_address.clone();
+
+                                    token2_amount = swap(&amount_in, edge1);
+                                    token3_amount = swap(&token2_amount, edge2);
+                                    token1_amount = swap(&token3_amount, edge3);
                                 }
                             } else {
                                 println!(
@@ -350,6 +379,9 @@ async fn main() {
             "SC Addresses: {}, {}, {}",
             sc_address1, sc_address2, sc_address3
         );
+        println!("Expected token2 amount: {}", token2_amount);
+        println!("Expected token3 amount: {}", token3_amount);
+        println!("Expected token1 amount after swap: {}", token1_amount);
 
         let mut swaps: MultiValueEncoded<
             StaticApi,
