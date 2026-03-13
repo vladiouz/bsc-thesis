@@ -42,9 +42,6 @@ pub fn find_trade_path(graph: &Graph) -> Option<TradePath> {
     let mut token2_id = String::new();
     let mut token3_id = String::new();
 
-    let mut token2_amount = BigUint::zero();
-    let mut token3_amount = BigUint::zero();
-    let mut token1_amount = BigUint::zero();
     let mut max_profit = BigUint::zero();
 
     let mut sc_address1 = String::new();
@@ -64,10 +61,6 @@ pub fn find_trade_path(graph: &Graph) -> Option<TradePath> {
                         if edge3.out_id == *token1 {
                             let profit = simulate_triangle(&amount_in, edge1, edge2, edge3);
                             if profit > BigUint::zero() {
-                                println!(
-                                    "Arbitrage opportunity: {} -> {} -> {} -> {} | Profit: {}",
-                                    token1, token2, token3, token1, profit
-                                );
                                 if profit > max_profit {
                                     max_profit = profit;
                                     token2_id = token2.clone();
@@ -75,16 +68,7 @@ pub fn find_trade_path(graph: &Graph) -> Option<TradePath> {
                                     sc_address1 = edge1.sc_address.clone();
                                     sc_address2 = edge2.sc_address.clone();
                                     sc_address3 = edge3.sc_address.clone();
-
-                                    token2_amount = swap(&amount_in, edge1);
-                                    token3_amount = swap(&token2_amount, edge2);
-                                    token1_amount = swap(&token3_amount, edge3);
                                 }
-                            } else {
-                                println!(
-                                    "No arbitrage: {} -> {} -> {} -> {}",
-                                    token1, token2, token3, token1
-                                );
                             }
                         }
                     }
@@ -94,18 +78,6 @@ pub fn find_trade_path(graph: &Graph) -> Option<TradePath> {
     }
 
     if max_profit > BigUint::zero() {
-        println!(
-            "Best arbitrage path: {} -> {} -> {} -> {} | Max Profit: {}",
-            token1, token2_id, token3_id, token1, max_profit
-        );
-        println!(
-            "SC Addresses: {}, {}, {}",
-            sc_address1, sc_address2, sc_address3
-        );
-        println!("Expected token2 amount: {}", token2_amount);
-        println!("Expected token3 amount: {}", token3_amount);
-        println!("Expected token1 amount after swap: {}", token1_amount);
-
         let mut swaps: MultiValueEncoded<
             StaticApi,
             MultiValue2<ManagedAddress<StaticApi>, TokenIdentifier<StaticApi>>,

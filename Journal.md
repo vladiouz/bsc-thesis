@@ -91,14 +91,21 @@
 - **NEW IDEA**: use an observer to see LPs swaps and be faster (update only the pairs that had a swap instead of rebuilding the whole graph every time)
 - cleaned the `arbitrage-bot` code and made it readable
 
+## 13.03
+- got metrics on all off-chain blocks
+- fetching reserves and fees is by far the biggest bottleneck, should optimize here based on the ideas
+- also fetching the pools takes a while, this could be done somewhere separate
+
 # Ideas
 - parallelize reserve fetching
-- use an observer for getching
+- use an observer for fetching
 - add a nice frontend at the end and deploy it
 - try Bellman Ford instead of triangle and compare the results
 - figure out how to optimize `AMOUNT_IN` for maximum profit
 - try the Router SC and compare results
 - maybe gas optimizations
+- keep only tokens having LPs with USDC (or another chosen currency) to reduce the graph size
+- have different instances running having different base currencies (kind of in the spirit of parallelization)
 
 # Tasks
 - [ ] measure execution time of each big off-chain code block
