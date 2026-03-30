@@ -96,6 +96,39 @@
 - fetching reserves and fees is by far the biggest bottleneck, should optimize here based on the ideas
 - also fetching the pools takes a while, this could be done somewhere separate
 
+## 14.03
+- worked on `getReserve` concurrently, wrote this code:
+	```rust
+	let futures = liquidity_pools.iter_mut().map(|lp| async {
+        lp.fee = get_fee(&client, &lp.sc_address).await;
+        lp.base_reserve = get_token_reserve(&client, &lp.sc_address, &lp.base_id).await;
+        lp.quote_reserve = get_token_reserve(&client, &lp.sc_address, &lp.quote_id).await;
+    });
+
+    join_all(futures).await;	
+	```
+- I was getting an 1015 error code, so I had to send the requests delayed a bit, or limit concurrency, which would, of course, slow down the execution (that otherwise was taking ~ 1 second)
+- will try to have an observer node so I would not have to worry about rate limiting
+- looking [here](https://docs.multiversx.com/sdk-and-tools/notifier)
+- the link above didn't have info on how to set up my own observer node, but [this one](https://docs.multiversx.com/integrators/observing-squad/) should have
+- since my local machine does not have the required resources (8 CPU & 16 GB RAM vs 16 CPU & 32 GB RAM), [Digital Ocean](https://marketplace.digitalocean.com/apps/multiversx-full-observing-squad) might come in handy later on
+
+## 17.03
+- tried to run the observing squad on my laptop, but it seems like it's too intensive for my machine, so, before running on cloud, another approach would be to use an observer just for shard 1, since all LPs are on shard 1
+
+## 18.03
+- looked also into [snapshotless observing squad](https://docs.multiversx.com/integrators/snapshotless-observing-squad) and I'd try [that](https://chatgpt.com/share/69bae23f-5204-800b-90e7-27a85e5d8cd6) too beforehand
+
+# 20.03
+- tried different approaches to running the (snapshotless) observing squad locally and looked into cloud solutions
+- at the very best, I can try running a snapshotless observer only for shard 1, but state sync doesn't seem like it's going well
+
+# 30.03
+- after a couple of weeks of trying, I managed to set up the observer
+- I only have one snapshotless observer for shard 1, as all LPs are there
+- the observer and proxy are running locally and their config is in the `mx-chain-observing-squad` folder
+- for v0.1.1, I chose the observer for lp data fetching, and the metrics show a significant improvement in execution time, having a x6 improvement
+
 # Ideas
 - parallelize reserve fetching
 - use an observer for fetching
@@ -106,6 +139,10 @@
 - maybe gas optimizations
 - keep only tokens having LPs with USDC (or another chosen currency) to reduce the graph size
 - have different instances running having different base currencies (kind of in the spirit of parallelization)
+- something that might be very important for mainnet readiness: monitoring mempool and simulating state after transactions (don't wait for the transactions to be confirmed already)
+- simulate tx execution
+- try to use more LPs, not just xExchange ones
+- **dive deeper into proxy and observer nodes**
 
 # Tasks
 - [ ] measure execution time of each big off-chain code block

@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+ observer-1:
+   image: chain-observer-devnet:D1.11.0.2
+   ports:
+     - "8081:8080"
+     - "10001:37373"
+   environment:
+     - SHARD=1 
+   volumes:
+     - ${SQUAD_DIRECTORY}/node-1/db:/go/mx-chain-go/cmd/node/db
+     - ${SQUAD_DIRECTORY}/node-1/logs:/go/mx-chain-go/cmd/node/logs
+     - ${SQUAD_DIRECTORY}/node-1/config:/config
+   command: --destination-shard-as-observer=${SHARD_1} --validator-key-pem-file=/config/observerKey_${SHARD_1}.pem --display-name="${DISPLAY_NAME_1}" --operation-mode=snapshotless-observer
+   networks:
+     multiversx-squad:
+       ipv4_address: 10.0.2.5
+
+ proxy:
+   image: mx-proxy:v1.3.4.1
+   ports:
+     - "8079:8079"
+   environment:
+     - IP=10.0.2.2
+   networks:
+     multiversx-squad:
+       ipv4_address: 10.0.2.2
+
+networks:
+  multiversx-squad:
+    ipam:
+      config:
+        - subnet: 10.0.2.0/24
