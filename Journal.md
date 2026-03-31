@@ -129,6 +129,22 @@
 - the observer and proxy are running locally and their config is in the `mx-chain-observing-squad` folder
 - for v0.1.1, I chose the observer for lp data fetching, and the metrics show a significant improvement in execution time, having a x6 improvement
 
+# 31.03
+- next up:
+	- more profiling on local observer
+	- parallelize the reserves fetching and profile
+	- have a notifier so each block I only compute the paths with LPs that had a swap
+	- look into other DEXs (ashswap, jexchange, onedex)
+- strategy for notifier:
+	- observer + notifier instance (w/ redis) + websocket client
+	- for observer, edit `HostDriversConfig` in `cmd/node/config/external.toml`
+	- will connect observer and notifier instance with a websocket
+	- set up the [notifier](https://github.com/multiversx/mx-chain-notifier-go/) and update `General` and `WebSocketConnector` to be aligned with the observer (look into `cmd/notifier/config.toml`)
+	- will use redis for deduplication, so must set `CheckDuplicates` to `true`
+	- for configuring I need to check the `README`
+	- next is the websocket client, look into the same repo
+	- needs to be benchmarked against the http fetch from observer proxy
+
 # Ideas
 - parallelize reserve fetching
 - use an observer for fetching
