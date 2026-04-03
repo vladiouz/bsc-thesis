@@ -119,20 +119,19 @@
 ## 18.03
 - looked also into [snapshotless observing squad](https://docs.multiversx.com/integrators/snapshotless-observing-squad) and I'd try [that](https://chatgpt.com/share/69bae23f-5204-800b-90e7-27a85e5d8cd6) too beforehand
 
-# 20.03
+## 20.03
 - tried different approaches to running the (snapshotless) observing squad locally and looked into cloud solutions
 - at the very best, I can try running a snapshotless observer only for shard 1, but state sync doesn't seem like it's going well
 
-# 30.03
+## 30.03
 - after a couple of weeks of trying, I managed to set up the observer
 - I only have one snapshotless observer for shard 1, as all LPs are there
 - the observer and proxy are running locally and their config is in the `mx-chain-observing-squad` folder
 - for v0.1.1, I chose the observer for lp data fetching, and the metrics show a significant improvement in execution time, having a x6 improvement
 
-# 31.03
+## 31.03
 - next up:
 	- more profiling on local observer
-	- parallelize the reserves fetching and profile
 	- have a notifier so each block I only compute the paths with LPs that had a swap
 	- look into other DEXs (ashswap, jexchange, onedex)
 - strategy for notifier:
@@ -144,6 +143,14 @@
 	- for configuring I need to check the `README`
 	- next is the websocket client, look into the same repo
 	- needs to be benchmarked against the http fetch from observer proxy
+
+## 03.04
+- the notifier setup is done (alongside `rabbitmq`)
+- the events can be nicely seen in the RabbitMQ dashboard
+- will need to use a crate for getting the messages
+- notifier service is up using `docker-compose --env-file .env up -d` from the `arbitrage-relay` folder
+- it would be cool to have the rabbitmq queues setup already when the notifier starts, should have some config files for that probably
+- I think I should also bring in the `proxy` for the initial fetching of the LP data
 
 # Ideas
 - parallelize reserve fetching

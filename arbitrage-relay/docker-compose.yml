@@ -1,0 +1,58 @@
+version: "3"
+
+networks:
+  notifier-net:
+    driver: bridge
+
+services:
+  redis-master:
+    image: "bitnami/redis"
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+        - "6379:6379"
+    networks:
+      - notifier-net
+  redis-sentinel:
+    image: "bitnami/redis-sentinel"
+    environment:
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_MASTER_HOST=redis-master
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=10000
+    depends_on:
+      - redis-master
+    ports:
+        - "26379:26379"
+    networks:
+      - notifier-net
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+        - "5672:5672"
+        - "15672:15672"
+    networks:
+      - notifier-net
+
+  observer-1:
+    image: chain-observer-devnet:D1.11.0.5
+    environment:
+      - SHARD=1 
+    volumes:
+      - ${SQUAD_DIRECTORY}/node-1/db:/go/mx-chain-go/cmd/node/db
+      - ${SQUAD_DIRECTORY}/node-1/logs:/go/mx-chain-go/cmd/node/logs
+      - ${SQUAD_DIRECTORY}/node-1/config:/config
+    command: --destination-shard-as-observer=${SHARD_1} --validator-key-pem-file=/config/observerKey_${SHARD_1}.pem --display-name="${DISPLAY_NAME_1}" --operation-mode=snapshotless-observer
+    network_mode: host
+
+  notifier:
+    image: notifier:latest
+    container_name: notifier
+    network_mode: host
+    command:
+      - --publisher-type
+      - rabbitmq
+      - --log-level=*:DEBUG
+    restart: unless-stopped
