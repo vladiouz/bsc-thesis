@@ -151,6 +151,21 @@
 - notifier service is up using `docker-compose --env-file .env up -d` from the `arbitrage-relay` folder
 - it would be cool to have the rabbitmq queues setup already when the notifier starts, should have some config files for that probably
 - I think I should also bring in the `proxy` for the initial fetching of the LP data
+- **next steps**:
+	- add the `proxy` too
+	- write a rabbitmq client and reshape the bot logic
+	- measure
+	- have queues in `rabitmq` setup beforehand (maybe with a config file)
+	- other optimizations (gas, other DEXs, etc.)
+- tried to add the proxy but communication is not the best
+	- I need to set up the networks differently
+	- I can have everyone except the proxy in a network, and then the proxy and the observer in another
+	- By doing this, I must check the config for all components too
+
+## 15.04
+- separated data fetching in two:
+	- observer + proxy for having a gateway
+	- observer + notifier for push events
 
 # Ideas
 - parallelize reserve fetching

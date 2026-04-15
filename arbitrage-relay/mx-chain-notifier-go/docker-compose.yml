@@ -35,3 +35,24 @@ services:
         - "15672:15672"
     networks:
       - notifier-net
+
+  observer-1:
+    image: chain-observer-devnet:D1.11.0.5
+    environment:
+      - SHARD=1 
+    volumes:
+      - ${SQUAD_DIRECTORY}/node-1/db:/go/mx-chain-go/cmd/node/db
+      - ${SQUAD_DIRECTORY}/node-1/logs:/go/mx-chain-go/cmd/node/logs
+      - ${SQUAD_DIRECTORY}/node-1/config:/config
+    command: --destination-shard-as-observer=${SHARD_1} --validator-key-pem-file=/config/observerKey_${SHARD_1}.pem --display-name="${DISPLAY_NAME_1}" --operation-mode=snapshotless-observer
+    network_mode: host
+
+  notifier:
+    image: notifier:latest
+    container_name: notifier
+    network_mode: host
+    command:
+      - --publisher-type
+      - rabbitmq
+      - --log-level=*:DEBUG
+    restart: unless-stopped

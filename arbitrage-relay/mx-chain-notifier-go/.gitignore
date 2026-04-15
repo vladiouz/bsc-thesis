@@ -18,7 +18,6 @@
 /.env.dev
 /.env.testing
 
-.env
 .env.dev
 .env.testing
 
