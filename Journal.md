@@ -173,6 +173,15 @@
 ## 17.04
 - fetching is done using only one observer now
 
+## 20.04
+- trying to minimize the `fetching_reserves` by doing the following:
+	- adjusting rate limiting at observer or proxy level
+	- only using LPs that would be included in a triangle
+- generated a python script to check how many requests can the gateway handle concurrently, and a safe spot would be around 100 requests (meanwhile, for `fetching_reserves` there are currently ~750 requests)
+- to get rid of 1/3 of the requests, one method could be to queue fees separately, exactly after the main loop (so still in the same block timeline), as it's not that crucial, given that fees update much less frequently than reserves
+- next: let's see how many pools we actually need to fetch
+- for USDC in particular, we need only 23 LPs, which sounds great (also the fetching should only take around 100 miliseconds, but we'll check it out soon); additionally: WEGLD - 28, MEX - 15 LPs (devnet); on mainnet there are 541 LPs, 97 of them relevant for USCD, 177 for WEGLD and 70 for MEX; maybe for mainnet I could have two observers working for USDC
+
 # Ideas
 - parallelize reserve fetching
 - use an observer for fetching
@@ -195,3 +204,8 @@
 - [ ] use an observer for LP data fetching
 - [ ] compare observer VS no observer execution time
 - [ ] add a basic gas calculation for trades (kinda low hanging fruit)
+
+
+# Versions
+- v0.1.0: using the public gateway for all data fetching
+- v0.1.1: using an observer on shard 1 and a proxy for fetching the LP data

@@ -74,6 +74,7 @@ services:
       - "8079:8079"
     environment:
       - IP=10.0.2.2
+    command: ["--start-swagger-ui"]
     networks:
       gateway-net:
         ipv4_address: 10.0.2.2
