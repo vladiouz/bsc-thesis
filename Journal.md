@@ -167,6 +167,12 @@
 	- observer + proxy for having a gateway
 	- observer + notifier for push events
 
+## 16.04
+- saw how to connect to `RabbitMQ` with a rust consumer, next up would be to integrate it in the bot and parse the messages
+
+## 17.04
+- fetching is done using only one observer now
+
 # Ideas
 - parallelize reserve fetching
 - use an observer for fetching
@@ -181,6 +187,7 @@
 - simulate tx execution
 - try to use more LPs, not just xExchange ones
 - **dive deeper into proxy and observer nodes**
+- check with the proffesor if I should compare streaming with traditional amqp libraries
 
 # Tasks
 - [ ] measure execution time of each big off-chain code block
