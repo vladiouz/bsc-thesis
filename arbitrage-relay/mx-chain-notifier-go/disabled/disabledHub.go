@@ -37,6 +37,10 @@ func (h *Hub) PublishBlockEventsWithOrder(blockTxs data.BlockEventsWithOrder) {
 func (h *Hub) PublishStateAccesses(blockTxs data.BlockStateAccesses) {
 }
 
+// PublishTrackedContractsActivity does nothing
+func (h *Hub) PublishTrackedContractsActivity(_ data.BlockTrackedContractsActivity) {
+}
+
 // RegisterEvent does nothing
 func (h *Hub) RegisterEvent(_ dispatcher.EventDispatcher) {
 }

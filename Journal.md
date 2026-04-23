@@ -181,6 +181,13 @@
 - to get rid of 1/3 of the requests, one method could be to queue fees separately, exactly after the main loop (so still in the same block timeline), as it's not that crucial, given that fees update much less frequently than reserves
 - next: let's see how many pools we actually need to fetch
 - for USDC in particular, we need only 23 LPs, which sounds great (also the fetching should only take around 100 miliseconds, but we'll check it out soon); additionally: WEGLD - 28, MEX - 15 LPs (devnet); on mainnet there are 541 LPs, 97 of them relevant for USCD, 177 for WEGLD and 70 for MEX; maybe for mainnet I could have two observers working for USDC
+- should look how `block_scrs` look like in `RabbitMQ` and if they're more useful than `block_txs`
+
+## 23.04
+- the exchanges offered are a bit useless, so I created another exchange that would push the LPs that had any kind of interaction in the last block
+- small improvements: config for RabbitMQ queues and updated the start up script
+- filtered unneded pools (0.2.0)
+- todo: need to add tracked contracts to the notifier config
 
 # Ideas
 - parallelize reserve fetching
@@ -209,3 +216,4 @@
 # Versions
 - v0.1.0: using the public gateway for all data fetching
 - v0.1.1: using an observer on shard 1 and a proxy for fetching the LP data
+- v0.2.0: unneded LPs are filtered out

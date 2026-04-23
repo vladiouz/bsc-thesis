@@ -231,6 +231,10 @@ func (ch *commonHub) PublishStateAccesses(stateAccesses data.BlockStateAccesses)
 	}
 }
 
+// PublishTrackedContractsActivity is currently a no-op for websocket dispatchers.
+func (ch *commonHub) PublishTrackedContractsActivity(_ data.BlockTrackedContractsActivity) {
+}
+
 func (ch *commonHub) registerDispatcher(d dispatcher.EventDispatcher) {
 	ch.mutDispatchers.Lock()
 	defer ch.mutDispatchers.Unlock()

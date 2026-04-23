@@ -26,6 +26,7 @@ func CreateEventsInterceptor(cfg config.GeneralConfig) (process.EventsIntercepto
 	argsEventsInterceptor := process.ArgsEventsInterceptor{
 		PubKeyConverter:      pubKeyConverter,
 		WithReadStateChanges: cfg.WithReadStateChanges,
+		TrackedContracts:     cfg.TrackedContracts,
 	}
 
 	return process.NewEventsInterceptor(argsEventsInterceptor)

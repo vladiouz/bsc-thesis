@@ -28,6 +28,7 @@ type PublisherService interface {
 	BroadcastScrs(event data.BlockScrs)
 	BroadcastBlockEventsWithOrder(event data.BlockEventsWithOrder)
 	BroadcastStateAccesses(events data.BlockStateAccesses)
+	BroadcastTrackedContractsActivity(events data.BlockTrackedContractsActivity)
 	Close() error
 	IsInterfaceNil() bool
 }

@@ -19,6 +19,7 @@ type publisher struct {
 	broadcastBlockEventsWithOrder chan data.BlockEventsWithOrder
 	broadcastScrs                 chan data.BlockScrs
 	broadcastStateAccesses        chan data.BlockStateAccesses
+	broadcastTrackedContracts     chan data.BlockTrackedContractsActivity
 
 	cancelFunc func()
 	closeChan  chan struct{}
@@ -40,6 +41,7 @@ func NewPublisher(handler PublisherHandler) (*publisher, error) {
 		broadcastScrs:                 make(chan data.BlockScrs),
 		broadcastBlockEventsWithOrder: make(chan data.BlockEventsWithOrder),
 		broadcastStateAccesses:        make(chan data.BlockStateAccesses),
+		broadcastTrackedContracts:     make(chan data.BlockTrackedContractsActivity),
 		closeChan:                     make(chan struct{}),
 	}
 
@@ -83,6 +85,8 @@ func (p *publisher) run(ctx context.Context) {
 			p.handler.PublishBlockEventsWithOrder(blockEvents)
 		case blockStateAccesses := <-p.broadcastStateAccesses:
 			p.handler.PublishStateAccesses(blockStateAccesses)
+		case trackedContracts := <-p.broadcastTrackedContracts:
+			p.handler.PublishTrackedContractsActivity(trackedContracts)
 		}
 	}
 }
@@ -139,6 +143,14 @@ func (p *publisher) BroadcastBlockEventsWithOrder(events data.BlockEventsWithOrd
 func (p *publisher) BroadcastStateAccesses(events data.BlockStateAccesses) {
 	select {
 	case p.broadcastStateAccesses <- events:
+	case <-p.closeChan:
+	}
+}
+
+// BroadcastTrackedContractsActivity will handle tracked contracts activity pushed by producers
+func (p *publisher) BroadcastTrackedContractsActivity(events data.BlockTrackedContractsActivity) {
+	select {
+	case p.broadcastTrackedContracts <- events:
 	case <-p.closeChan:
 	}
 }

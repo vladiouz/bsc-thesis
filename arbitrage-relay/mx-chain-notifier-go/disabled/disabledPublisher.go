@@ -35,6 +35,14 @@ func (dp *Publisher) BroadcastScrs(_ data.BlockScrs) {
 func (dp *Publisher) BroadcastBlockEventsWithOrder(_ data.BlockEventsWithOrder) {
 }
 
+// BroadcastStateAccesses does nothing
+func (dp *Publisher) BroadcastStateAccesses(_ data.BlockStateAccesses) {
+}
+
+// BroadcastTrackedContractsActivity does nothing
+func (dp *Publisher) BroadcastTrackedContractsActivity(_ data.BlockTrackedContractsActivity) {
+}
+
 // Close returns nil
 func (dp *Publisher) Close() error {
 	return nil

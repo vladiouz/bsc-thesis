@@ -139,6 +139,13 @@ func (eh *eventsHandler) HandleSaveBlockEvents(allEvents data.ArgsSaveBlockData)
 	}
 	eh.handleStateAccesses(stateAccesses)
 
+	trackedContracts := eventsData.TrackedContractsActivity
+	trackedContracts.Hash = eventsData.Hash
+	trackedContracts.ShardID = eventsData.Header.GetShardID()
+	trackedContracts.TimeStampMs = headerTimeStampMs
+	trackedContracts.Nonce = eventsData.Header.GetNonce()
+	eh.handleTrackedContractsActivity(trackedContracts)
+
 	return nil
 }
 
@@ -330,6 +337,28 @@ func (eh *eventsHandler) handleStateAccesses(stateAccesses data.BlockStateAccess
 	t := time.Now()
 	eh.publisher.BroadcastStateAccesses(stateAccesses)
 	eh.metricsHandler.AddRequest(getRabbitOpID(common.BlockStateAccesses), time.Since(t))
+}
+
+func (eh *eventsHandler) handleTrackedContractsActivity(trackedContracts data.BlockTrackedContractsActivity) {
+	if trackedContracts.Hash == "" {
+		log.Warn("received empty tracked contracts activity",
+			"will process", false,
+		)
+		return
+	}
+
+	if len(trackedContracts.Contracts) == 0 {
+		return
+	}
+
+	log.Info("received tracked contracts activity",
+		"block hash", trackedContracts.Hash,
+		"contracts", len(trackedContracts.Contracts),
+	)
+
+	t := time.Now()
+	eh.publisher.BroadcastTrackedContractsActivity(trackedContracts)
+	eh.metricsHandler.AddRequest(getRabbitOpID(common.TrackedContractsActivity), time.Since(t))
 }
 
 func (eh *eventsHandler) tryCheckProcessedWithRetry(id, blockHash string) bool {

@@ -83,6 +83,24 @@ type BlockStateAccesses struct {
 	StateAccessesPerAccounts map[string]*stateChange.StateAccesses `json:"stateAccessesPerAccounts"`
 }
 
+// ContractActivity contains the touches detected for a tracked contract in a block
+type ContractActivity struct {
+	Address          string   `json:"address"`
+	TxHashes         []string `json:"txHashes,omitempty"`
+	ScrHashes        []string `json:"scrHashes,omitempty"`
+	EventIdentifiers []string `json:"eventIdentifiers,omitempty"`
+	EventTxHashes    []string `json:"eventTxHashes,omitempty"`
+}
+
+// BlockTrackedContractsActivity contains tracked contract activity for a block
+type BlockTrackedContractsActivity struct {
+	Hash        string             `json:"hash"`
+	ShardID     uint32             `json:"shardID"`
+	TimeStampMs uint64             `json:"timestampMs"`
+	Nonce       uint64             `json:"nonce"`
+	Contracts   []ContractActivity `json:"contracts"`
+}
+
 // NotifierTransaction defines a wrapper over transaction
 type NotifierTransaction struct {
 	*transaction.Transaction

@@ -47,6 +47,10 @@ func createMockArgsRabbitMqPublisher() rabbitmq.ArgsRabbitMqPublisher {
 				Name: "stateAccesses",
 				Type: "fanout",
 			},
+			TrackedContractsExchange: config.RabbitMQExchangeConfig{
+				Name: "trackedContracts",
+				Type: "fanout",
+			},
 		},
 		Marshaller: &mock.MarshalizerMock{},
 	}

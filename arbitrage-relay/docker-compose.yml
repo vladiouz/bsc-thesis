@@ -34,6 +34,9 @@ services:
 
   rabbitmq:
     image: "rabbitmq:3-management"
+    volumes:
+      - ./rabbitmq-configs/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq-configs/definitions.json:/etc/rabbitmq/definitions.json:ro
     ports:
         - "5672:5672"
         - "15672:15672"
@@ -58,12 +61,16 @@ services:
         ipv4_address: 10.0.2.5
 
   notifier:
-    image: notifier:1.0.1
+    build:
+      context: ./mx-chain-notifier-go
+    image: notifier:local
     container_name: notifier
     command:
       - --publisher-type
       - rabbitmq
       - --log-level=*:DEBUG
+    volumes:
+      - ./mx-chain-notifier-go/cmd/notifier/config:/multiversx/config:ro
     restart: unless-stopped
     networks:
       - notifier-net

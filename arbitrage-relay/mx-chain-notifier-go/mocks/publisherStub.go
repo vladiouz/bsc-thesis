@@ -12,6 +12,7 @@ type PublisherStub struct {
 	BroadcastScrsCalled                 func(event data.BlockScrs)
 	BroadcastBlockEventsWithOrderCalled func(event data.BlockEventsWithOrder)
 	BroadcastStateAccessesCalled        func(event data.BlockStateAccesses)
+	BroadcastTrackedContractsCalled     func(event data.BlockTrackedContractsActivity)
 	CloseCalled                         func() error
 }
 
@@ -70,6 +71,13 @@ func (ps *PublisherStub) BroadcastBlockEventsWithOrder(event data.BlockEventsWit
 func (ps *PublisherStub) BroadcastStateAccesses(event data.BlockStateAccesses) {
 	if ps.BroadcastStateAccessesCalled != nil {
 		ps.BroadcastStateAccessesCalled(event)
+	}
+}
+
+// BroadcastTrackedContractsActivity -
+func (ps *PublisherStub) BroadcastTrackedContractsActivity(event data.BlockTrackedContractsActivity) {
+	if ps.BroadcastTrackedContractsCalled != nil {
+		ps.BroadcastTrackedContractsCalled(event)
 	}
 }
 

@@ -24,6 +24,7 @@ type GeneralConfig struct {
 	AddressConverter     AddressConverterConfig
 	CheckDuplicates      bool
 	WithReadStateChanges bool
+	TrackedContracts     []string
 }
 
 // MarshallerConfig maps the marshaller configuration
@@ -74,14 +75,15 @@ type RedisConfig struct {
 
 // RabbitMQConfig maps the rabbitMQ configuration
 type RabbitMQConfig struct {
-	Url                     string
-	EventsExchange          RabbitMQExchangeConfig
-	RevertEventsExchange    RabbitMQExchangeConfig
-	FinalizedEventsExchange RabbitMQExchangeConfig
-	BlockTxsExchange        RabbitMQExchangeConfig
-	BlockScrsExchange       RabbitMQExchangeConfig
-	BlockEventsExchange     RabbitMQExchangeConfig
-	StateAccessesExchange   RabbitMQExchangeConfig
+	Url                      string
+	EventsExchange           RabbitMQExchangeConfig
+	RevertEventsExchange     RabbitMQExchangeConfig
+	FinalizedEventsExchange  RabbitMQExchangeConfig
+	BlockTxsExchange         RabbitMQExchangeConfig
+	BlockScrsExchange        RabbitMQExchangeConfig
+	BlockEventsExchange      RabbitMQExchangeConfig
+	StateAccessesExchange    RabbitMQExchangeConfig
+	TrackedContractsExchange RabbitMQExchangeConfig
 }
 
 // RabbitMQExchangeConfig holds the configuration for a rabbitMQ exchange

@@ -102,6 +102,12 @@ func checkArgs(args ArgsRabbitMqPublisher) error {
 	if args.Config.StateAccessesExchange.Type == "" {
 		return fmt.Errorf("%w for StateAccessesExchange", ErrInvalidRabbitMqExchangeType)
 	}
+	if args.Config.TrackedContractsExchange.Name == "" {
+		return fmt.Errorf("%w for TrackedContractsExchange", ErrInvalidRabbitMqExchangeName)
+	}
+	if args.Config.TrackedContractsExchange.Type == "" {
+		return fmt.Errorf("%w for TrackedContractsExchange", ErrInvalidRabbitMqExchangeType)
+	}
 
 	return nil
 }
@@ -133,6 +139,10 @@ func (rp *rabbitMqPublisher) createExchanges() error {
 		return err
 	}
 	err = rp.createExchange(rp.cfg.StateAccessesExchange)
+	if err != nil {
+		return err
+	}
+	err = rp.createExchange(rp.cfg.TrackedContractsExchange)
 	if err != nil {
 		return err
 	}
@@ -246,6 +256,20 @@ func (rp *rabbitMqPublisher) PublishStateAccesses(stateAccesses data.BlockStateA
 	err = rp.publishFanout(rp.cfg.StateAccessesExchange.Name, stateAccessesBytes)
 	if err != nil {
 		log.Error("failed to publish block state accesses to rabbitMQ", "err", err.Error())
+	}
+}
+
+// PublishTrackedContractsActivity will publish tracked contracts activity to rabbitmq
+func (rp *rabbitMqPublisher) PublishTrackedContractsActivity(contracts data.BlockTrackedContractsActivity) {
+	contractsBytes, err := rp.marshaller.Marshal(contracts)
+	if err != nil {
+		log.Error("could not marshal tracked contracts activity", "err", err.Error())
+		return
+	}
+
+	err = rp.publishFanout(rp.cfg.TrackedContractsExchange.Name, contractsBytes)
+	if err != nil {
+		log.Error("failed to publish tracked contracts activity to rabbitMQ", "err", err.Error())
 	}
 }
 

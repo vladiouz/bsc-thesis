@@ -3,6 +3,7 @@ package process
 import (
 	"encoding/hex"
 	"sort"
+	"strings"
 
 	"github.com/multiversx/mx-chain-core-go/core"
 	"github.com/multiversx/mx-chain-core-go/core/check"
@@ -30,11 +31,13 @@ type logEvent struct {
 type ArgsEventsInterceptor struct {
 	PubKeyConverter      core.PubkeyConverter
 	WithReadStateChanges bool
+	TrackedContracts     []string
 }
 
 type eventsInterceptor struct {
 	pubKeyConverter      core.PubkeyConverter
 	withReadStateChanges bool
+	trackedContracts     map[string]struct{}
 }
 
 // NewEventsInterceptor creates a new eventsInterceptor instance
@@ -46,6 +49,7 @@ func NewEventsInterceptor(args ArgsEventsInterceptor) (*eventsInterceptor, error
 	return &eventsInterceptor{
 		pubKeyConverter:      args.PubKeyConverter,
 		withReadStateChanges: args.WithReadStateChanges,
+		trackedContracts:     prepareTrackedContracts(args.TrackedContracts),
 	}, nil
 }
 
@@ -79,6 +83,7 @@ func (ei *eventsInterceptor) ProcessBlockEvents(eventsData *data.ArgsSaveBlockDa
 	scrsWithOrder := eventsData.TransactionsPool.SmartContractResults
 
 	stateAccessesPerAccounts := ei.getStateAccessesPerAccounts(eventsData)
+	trackedContractsActivity := ei.getTrackedContractsActivity(eventsData, events)
 
 	return &data.InterceptorBlockData{
 		Hash:                     hex.EncodeToString(eventsData.HeaderHash),
@@ -90,7 +95,26 @@ func (ei *eventsInterceptor) ProcessBlockEvents(eventsData *data.ArgsSaveBlockDa
 		ScrsWithOrder:            scrsWithOrder,
 		LogEvents:                events,
 		StateAccessesPerAccounts: stateAccessesPerAccounts,
+		TrackedContractsActivity: trackedContractsActivity,
 	}, nil
+}
+
+func prepareTrackedContracts(addresses []string) map[string]struct{} {
+	if len(addresses) == 0 {
+		return nil
+	}
+
+	tracked := make(map[string]struct{}, len(addresses))
+	for _, address := range addresses {
+		normalized := strings.TrimSpace(address)
+		if normalized == "" {
+			continue
+		}
+
+		tracked[normalized] = struct{}{}
+	}
+
+	return tracked
 }
 
 func getTxsWithOrder(transactionsPool *outport.TransactionPool) []txWithOrder {
@@ -177,6 +201,149 @@ func (ei *eventsInterceptor) getStateAccessesPerAccounts(eventsData *data.ArgsSa
 	)
 
 	return stateAccessesPerAccounts
+}
+
+func (ei *eventsInterceptor) getTrackedContractsActivity(eventsData *data.ArgsSaveBlockData, events []data.Event) data.BlockTrackedContractsActivity {
+	if len(ei.trackedContracts) == 0 {
+		return data.BlockTrackedContractsActivity{}
+	}
+
+	contracts := make(map[string]*trackedContractAccumulator)
+
+	if eventsData.TransactionsPool != nil {
+		for txHash, txInfo := range eventsData.TransactionsPool.Transactions {
+			if txInfo == nil || txInfo.Transaction == nil {
+				continue
+			}
+
+			ei.addTrackedAddress(contracts, txHash, "", txInfo.Transaction.GetRcvAddr(), nil)
+			ei.addTrackedAddress(contracts, txHash, "", txInfo.Transaction.GetSndAddr(), nil)
+		}
+
+		for scrHash, scrInfo := range eventsData.TransactionsPool.SmartContractResults {
+			if scrInfo == nil || scrInfo.SmartContractResult == nil {
+				continue
+			}
+
+			ei.addTrackedAddress(contracts, "", scrHash, scrInfo.SmartContractResult.GetRcvAddr(), nil)
+			ei.addTrackedAddress(contracts, "", scrHash, scrInfo.SmartContractResult.GetSndAddr(), nil)
+		}
+	}
+
+	for _, event := range events {
+		if event.Address == "" {
+			continue
+		}
+
+		_, ok := ei.trackedContracts[event.Address]
+		if !ok {
+			continue
+		}
+
+		acc := getOrCreateAccumulator(contracts, event.Address)
+		acc.eventIdentifiers[event.Identifier] = struct{}{}
+		if event.TxHash != "" {
+			acc.eventTxHashes[event.TxHash] = struct{}{}
+		}
+	}
+
+	result := make([]data.ContractActivity, 0, len(contracts))
+	for _, address := range sortedTrackedAddresses(contracts) {
+		acc := contracts[address]
+		result = append(result, data.ContractActivity{
+			Address:          address,
+			TxHashes:         sortedKeys(acc.txHashes),
+			ScrHashes:        sortedKeys(acc.scrHashes),
+			EventIdentifiers: sortedKeys(acc.eventIdentifiers),
+			EventTxHashes:    sortedKeys(acc.eventTxHashes),
+		})
+	}
+
+	if len(result) == 0 {
+		return data.BlockTrackedContractsActivity{}
+	}
+
+	return data.BlockTrackedContractsActivity{
+		Contracts: result,
+	}
+}
+
+type trackedContractAccumulator struct {
+	txHashes         map[string]struct{}
+	scrHashes        map[string]struct{}
+	eventIdentifiers map[string]struct{}
+	eventTxHashes    map[string]struct{}
+}
+
+func getOrCreateAccumulator(contracts map[string]*trackedContractAccumulator, address string) *trackedContractAccumulator {
+	acc, ok := contracts[address]
+	if ok {
+		return acc
+	}
+
+	acc = &trackedContractAccumulator{
+		txHashes:         make(map[string]struct{}),
+		scrHashes:        make(map[string]struct{}),
+		eventIdentifiers: make(map[string]struct{}),
+		eventTxHashes:    make(map[string]struct{}),
+	}
+	contracts[address] = acc
+
+	return acc
+}
+
+func (ei *eventsInterceptor) addTrackedAddress(contracts map[string]*trackedContractAccumulator, txHash string, scrHash string, rawAddress []byte, eventIdentifier *string) {
+	if len(rawAddress) == 0 {
+		return
+	}
+
+	address, err := ei.pubKeyConverter.Encode(rawAddress)
+	if err != nil {
+		log.Debug("failed to encode tracked contract address", "error", err)
+		return
+	}
+
+	_, ok := ei.trackedContracts[address]
+	if !ok {
+		return
+	}
+
+	acc := getOrCreateAccumulator(contracts, address)
+	if txHash != "" {
+		acc.txHashes[txHash] = struct{}{}
+	}
+	if scrHash != "" {
+		acc.scrHashes[scrHash] = struct{}{}
+	}
+	if eventIdentifier != nil && *eventIdentifier != "" {
+		acc.eventIdentifiers[*eventIdentifier] = struct{}{}
+	}
+}
+
+func sortedTrackedAddresses(contracts map[string]*trackedContractAccumulator) []string {
+	addresses := make([]string, 0, len(contracts))
+	for address := range contracts {
+		addresses = append(addresses, address)
+	}
+
+	sort.Strings(addresses)
+
+	return addresses
+}
+
+func sortedKeys(values map[string]struct{}) []string {
+	if len(values) == 0 {
+		return nil
+	}
+
+	keys := make([]string, 0, len(values))
+	for value := range values {
+		keys = append(keys, value)
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }
 
 func logStateAccessesPerTxs(stateAccesses map[string]*stateChange.StateAccesses) {

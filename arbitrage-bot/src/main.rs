@@ -8,7 +8,7 @@ use crate::api::all_pools::fetch_all_pools;
 use crate::api::pools_data::{get_fee, get_token_reserve};
 use crate::metrics::log_metric;
 use crate::models::graph::build_graph;
-use crate::models::liquidity_pool::LiquidityPool;
+use crate::models::liquidity_pool::{LiquidityPool, filter_pools};
 use crate::utils::find_trade_path;
 use arbitrage_interactor::interact;
 use config::*;
@@ -75,6 +75,14 @@ async fn main() {
             lps_creation_backup_timer.elapsed().as_micros(),
         );
     }
+
+    let filtering_timer = Instant::now();
+    liquidity_pools = filter_pools(liquidity_pools, BASE_TOKEN_ID);
+    log_metric(
+        VERSION,
+        "pools_filtering",
+        filtering_timer.elapsed().as_micros(),
+    );
 
     let fetching_reserves_timer = Instant::now();
 

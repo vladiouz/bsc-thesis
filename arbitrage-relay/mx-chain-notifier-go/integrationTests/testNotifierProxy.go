@@ -238,6 +238,10 @@ func GetDefaultConfigs() config.Configs {
 					Name: "stateaccesses",
 					Type: "fanout",
 				},
+				TrackedContractsExchange: config.RabbitMQExchangeConfig{
+					Name: "trackedcontracts",
+					Type: "fanout",
+				},
 			},
 		},
 		Flags: config.FlagsConfig{

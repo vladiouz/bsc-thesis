@@ -25,6 +25,7 @@ type Publisher interface {
 	BroadcastBlockEventsWithOrder(event data.BlockEventsWithOrder)
 	BroadcastScrs(event data.BlockScrs)
 	BroadcastStateAccesses(events data.BlockStateAccesses)
+	BroadcastTrackedContractsActivity(events data.BlockTrackedContractsActivity)
 	Close() error
 	IsInterfaceNil() bool
 }
@@ -73,6 +74,7 @@ type PublisherHandler interface {
 	PublishScrs(blockScrs data.BlockScrs)
 	PublishBlockEventsWithOrder(blockTxs data.BlockEventsWithOrder)
 	PublishStateAccesses(stateAccesses data.BlockStateAccesses)
+	PublishTrackedContractsActivity(contracts data.BlockTrackedContractsActivity)
 	Close() error
 	IsInterfaceNil() bool
 }

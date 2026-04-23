@@ -7,6 +7,16 @@
     # It depends also if read state changes are enabled from observer nodes
     WithReadStateChanges = false
 
+    # TrackedContracts contains smart contract addresses for which notifier will emit
+    # contract activity messages based on txs, SCRs and smart contract events.
+    TrackedContracts = [
+		"erd1qqqqqqqqqqqqqpgqrwttn3nprrvw2neel3nzxc7cda79yvmg0n4sxqwt5a",
+		"erd1qqqqqqqqqqqqqpgquaj92g0u3y4kslx4hpunu4j5r6x208un0n4sm0sm72",
+		"erd1qqqqqqqqqqqqqpgq7se6dwgrd5nez4fvlzwlepjqeh5z9m3f0n4s03exps",
+		"erd1qqqqqqqqqqqqqpgque4u70q9cqd7386f394xzfsg0ehevrek0n4sv5r3e0",
+		"erd1qqqqqqqqqqqqqpgqa05ph5e9f6hyy92synyawp4y8y9j3tkg0n4sgchc93"
+	]
+
     # ExternalMarshaller is used for handling incoming/outcoming api requests 
     [General.ExternalMarshaller]
         Type = "json"
@@ -122,4 +132,9 @@
     # The exchange which holds state accesses
     [RabbitMQ.StateAccessesExchange]
         Name = "state_accesses"
+        Type = "fanout"
+
+    # The exchange which holds contract activity for tracked smart contracts
+    [RabbitMQ.TrackedContractsExchange]
+        Name = "tracked_contracts_activity"
         Type = "fanout"

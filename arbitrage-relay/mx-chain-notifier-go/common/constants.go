@@ -37,6 +37,9 @@ const (
 
 	// BlockStateAccesses defines the subscription event type for block state accesses
 	BlockStateAccesses string = "block_state_accesses"
+
+	// TrackedContractsActivity defines the subscription event type for tracked contracts activity
+	TrackedContractsActivity string = "tracked_contracts_activity"
 )
 
 const (
