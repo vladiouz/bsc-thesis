@@ -188,6 +188,7 @@
 - small improvements: config for RabbitMQ queues and updated the start up script
 - filtered unneded pools (0.2.0)
 - todo: need to add tracked contracts to the notifier config
+- todo: maybe use `/vm-values/query` with `getReservesAndTotalSupply` to have only one req for LP reserves instead of 2
 
 # Ideas
 - parallelize reserve fetching

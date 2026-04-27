@@ -4,7 +4,7 @@ use num_traits::Zero;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct LiquidityPool {
     pub sc_address: String,
     pub base_id: String,

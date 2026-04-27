@@ -1,27 +1,29 @@
 pub mod api;
+pub mod arbitrage_cycle;
 pub mod config;
 pub mod metrics;
 pub mod models;
+pub mod rabbitmq_consumer;
 pub mod utils;
 
 use crate::api::all_pools::fetch_all_pools;
-use crate::api::pools_data::{get_fee, get_token_reserve};
+use crate::api::pools_data::get_fee;
+use crate::arbitrage_cycle::run_arbitrage_cycle;
 use crate::metrics::log_metric;
-use crate::models::graph::build_graph;
 use crate::models::liquidity_pool::{LiquidityPool, filter_pools};
-use crate::utils::find_trade_path;
-use arbitrage_interactor::interact;
+use crate::rabbitmq_consumer::setup_consumer;
 use config::*;
 use reqwest::Client;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::time::Instant;
+use tokio::sync::mpsc;
 
 #[tokio::main]
 async fn main() {
     let client = Client::new();
-    let pools_fetching_timer = Instant::now();
 
+    let pools_fetching_timer = Instant::now();
     let res_json = fetch_all_pools(&client).await;
     log_metric(
         VERSION,
@@ -30,7 +32,6 @@ async fn main() {
     );
 
     let mut liquidity_pools: Vec<LiquidityPool> = Vec::new();
-    let lps_creation_timer = Instant::now();
 
     for pair in res_json.as_array().unwrap() {
         let sc_address = &pair["address"];
@@ -43,84 +44,45 @@ async fn main() {
             quote_id.as_str().unwrap().to_string(),
         ));
     }
-    log_metric(
-        VERSION,
-        "lps_creation",
-        lps_creation_timer.elapsed().as_micros(),
-    );
 
-    // /mex/pairs endpoint might be down and return []
     if liquidity_pools.is_empty() {
         let file = File::open("pairs.csv").unwrap();
         let reader = BufReader::new(file);
-        let lps_creation_backup_timer = Instant::now();
 
         for line in reader.lines().skip(1) {
             let line = line.unwrap();
             let parts: Vec<&str> = line.split(',').collect();
-
-            let address = parts[0];
-            let token1 = parts[1];
-            let token2 = parts[2];
-
             liquidity_pools.push(LiquidityPool::new(
-                address.to_string(),
-                token1.to_string(),
-                token2.to_string(),
+                parts[0].to_string(),
+                parts[1].to_string(),
+                parts[2].to_string(),
             ));
         }
-        log_metric(
-            VERSION,
-            "lps_creation_backup",
-            lps_creation_backup_timer.elapsed().as_micros(),
-        );
     }
 
-    let filtering_timer = Instant::now();
     liquidity_pools = filter_pools(liquidity_pools, BASE_TOKEN_ID);
-    log_metric(
-        VERSION,
-        "pools_filtering",
-        filtering_timer.elapsed().as_micros(),
-    );
-
-    let fetching_reserves_timer = Instant::now();
 
     for lp in &mut liquidity_pools {
         lp.fee = get_fee(&client, &lp.sc_address).await;
-        lp.base_reserve = get_token_reserve(&client, &lp.sc_address, &lp.base_id).await;
-        lp.quote_reserve = get_token_reserve(&client, &lp.sc_address, &lp.quote_id).await;
     }
 
-    log_metric(
-        VERSION,
-        "fetching_reserves",
-        fetching_reserves_timer.elapsed().as_micros(),
-    );
+    let (trigger_sender, mut trigger_receiver) = mpsc::unbounded_channel::<()>();
 
-    let graph_building_timer = Instant::now();
-    let graph = build_graph(&liquidity_pools);
+    let client_clone = client.clone();
+    let mut pools_clone = liquidity_pools.clone();
 
-    log_metric(
-        VERSION,
-        "graph_building",
-        graph_building_timer.elapsed().as_micros(),
-    );
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            while trigger_receiver.recv().await.is_some() {
+                run_arbitrage_cycle(&client_clone, &mut pools_clone).await;
+            }
+        });
+    });
 
-    let swaps_finding_timer = Instant::now();
-    let swaps_option = find_trade_path(&graph);
+    setup_consumer(trigger_sender).await.unwrap();
 
-    log_metric(
-        VERSION,
-        "swaps_finding",
-        swaps_finding_timer.elapsed().as_micros(),
-    );
-
-    match swaps_option {
-        Some(swaps) => {
-            let mut interact = interact::ContractInteract::new().await;
-            interact.execute_trades(swaps).await;
-        }
-        None => println!("No arbitrage path found"),
+    loop {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     }
 }
