@@ -107,3 +107,11 @@ timestamp,version,metric_name,metric_value(microseconds)
 2026-04-23 12:52:23.015051786 UTC,0.2.0,fetching_reserves,301081
 2026-04-23 12:52:23.015361165 UTC,0.2.0,graph_building,102
 2026-04-23 12:52:23.016218116 UTC,0.2.0,swaps_finding,741
+2026-04-28 11:13:45.245774788 UTC,0.2.0,pools_fetching,226430
+2026-04-28 11:13:50.436954664 UTC,0.2.0,fetching_reserves,183623
+2026-04-28 11:13:50.437168491 UTC,0.2.0,graph_building,89
+2026-04-28 11:13:50.437688649 UTC,0.2.0,swaps_finding,445
+2026-04-28 11:26:10.521786418 UTC,0.2.0,pools_fetching,461815
+2026-04-28 11:26:14.363480587 UTC,0.2.0,fetching_reserves,92827
+2026-04-28 11:26:14.363673902 UTC,0.2.0,graph_building,88
+2026-04-28 11:26:14.364139187 UTC,0.2.0,swaps_finding,402

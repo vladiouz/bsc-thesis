@@ -29,6 +29,15 @@
       "auto_delete": false,
       "internal": false,
       "arguments": {}
+    },
+	{
+      "name": "block_txs",
+      "vhost": "/",
+      "type": "fanout",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
     }
   ],
   "queues": [
@@ -38,13 +47,31 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {}
-    }
+    },
+	{
+	  "name": "block_txs_queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+		"x-message-ttl": 1000,
+		"x-max-length": 1
+	  }
+	}
   ],
   "bindings": [
     {
       "source": "tracked_contracts_activity",
       "vhost": "/",
       "destination": "tracked_contracts_activity_queue",
+      "destination_type": "queue",
+      "routing_key": "",
+      "arguments": {}
+    },
+	{
+      "source": "block_txs",
+      "vhost": "/",
+      "destination": "block_txs_queue",
       "destination_type": "queue",
       "routing_key": "",
       "arguments": {}

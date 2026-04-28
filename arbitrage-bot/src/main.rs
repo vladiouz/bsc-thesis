@@ -73,14 +73,27 @@ async fn main() {
 
     std::thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            while trigger_receiver.recv().await.is_some() {
-                run_arbitrage_cycle(&client_clone, &mut pools_clone).await;
+        loop {
+            if trigger_receiver.blocking_recv().is_none() {
+                eprintln!("Arbitrage trigger channel closed; worker thread exiting");
+                break;
             }
-        });
+
+            println!("Arbitrage trigger received, starting cycle...");
+            let cycle_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                rt.block_on(run_arbitrage_cycle(&client_clone, &mut pools_clone));
+            }));
+
+            match cycle_result {
+                Ok(_) => println!("Arbitrage cycle finished"),
+                Err(_) => {
+                    eprintln!("Arbitrage cycle panicked; continuing with next trigger");
+                }
+            }
+        }
     });
 
-    setup_consumer(trigger_sender).await.unwrap();
+    let _consumer_runtime = setup_consumer(trigger_sender).await.unwrap();
 
     loop {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;

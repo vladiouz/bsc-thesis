@@ -1,11 +1,17 @@
 use amqprs::{
     BasicProperties, Deliver,
+    callbacks::DefaultConnectionCallback,
     channel::{BasicAckArguments, BasicConsumeArguments, Channel},
     connection::{Connection, OpenConnectionArguments},
     consumer::AsyncConsumer,
 };
 use async_trait::async_trait;
 use tokio::sync::mpsc;
+
+pub struct ConsumerRuntime {
+    _connection: Connection,
+    _channel: Channel,
+}
 
 pub struct ArbitrageConsumer {
     trigger_sender: mpsc::UnboundedSender<()>,
@@ -28,18 +34,22 @@ impl AsyncConsumer for ArbitrageConsumer {
     ) {
         println!("Received block: {}", String::from_utf8_lossy(&content));
 
-        let _ = self.trigger_sender.send(());
+        if let Err(e) = self.trigger_sender.send(()) {
+            eprintln!("Failed to enqueue arbitrage trigger: {}", e);
+        }
 
-        channel
+        if let Err(e) = channel
             .basic_ack(BasicAckArguments::new(deliver.delivery_tag(), false))
             .await
-            .unwrap();
+        {
+            eprintln!("Failed to ack RabbitMQ message: {}", e);
+        }
     }
 }
 
 pub async fn setup_consumer(
     trigger_sender: mpsc::UnboundedSender<()>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<ConsumerRuntime, Box<dyn std::error::Error>> {
     let connection = Connection::open(&OpenConnectionArguments::new(
         "localhost",
         5672,
@@ -47,6 +57,9 @@ pub async fn setup_consumer(
         "guest",
     ))
     .await?;
+    connection
+        .register_callback(DefaultConnectionCallback)
+        .await?;
 
     let channel = connection.open_channel(None).await?;
 
@@ -58,5 +71,8 @@ pub async fn setup_consumer(
         .await?;
 
     println!("Arbitrage bot listening for blocks...");
-    Ok(())
+    Ok(ConsumerRuntime {
+        _connection: connection,
+        _channel: channel,
+    })
 }

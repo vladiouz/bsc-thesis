@@ -190,6 +190,11 @@
 - todo: need to add tracked contracts to the notifier config
 - todo: maybe use `/vm-values/query` with `getReservesAndTotalSupply` to have only one req for LP reserves instead of 2
 
+## 28.04
+- updated RabbitMQ config so `block_txs_queue` is properly initialized
+- patched the bot and now transactions can be sent in a loop
+- handled failed transactions
+
 # Ideas
 - parallelize reserve fetching
 - use an observer for fetching

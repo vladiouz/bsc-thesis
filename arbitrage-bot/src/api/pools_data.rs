@@ -18,10 +18,16 @@ pub async fn get_fee(client: &Client, lp_address: &String) -> u32 {
 
     match response {
         Ok(resp) => match resp.text().await {
-            Ok(text) => {
-                let fee_json: Value = from_str(&text).unwrap();
-                fee = fee_json.as_object().unwrap()["data"]["data"].clone();
-            }
+            Ok(text) => match from_str::<Value>(&text) {
+                Ok(fee_json) => {
+                    fee = fee_json
+                        .get("data")
+                        .and_then(|v| v.get("data"))
+                        .cloned()
+                        .unwrap_or_else(|| Value::Number(DEFAULT_FEE.into()));
+                }
+                Err(e) => eprintln!("Failed to parse fee JSON for {}: {}", lp_address, e),
+            },
             Err(e) => eprintln!("Body error: {}", e),
         },
         Err(e) => eprintln!("Request error: {}", e),
@@ -47,10 +53,21 @@ pub async fn get_token_reserve(client: &Client, lp_address: &String, token_id: &
 
     match response {
         Ok(resp) => match resp.text().await {
-            Ok(text) => {
-                let reserve_json: Value = from_str(&text).unwrap();
-                reserve = reserve_json.as_object().unwrap()["data"]["data"].clone();
-            }
+            Ok(text) => match from_str::<Value>(&text) {
+                Ok(reserve_json) => {
+                    reserve = reserve_json
+                        .get("data")
+                        .and_then(|v| v.get("data"))
+                        .cloned()
+                        .unwrap_or(Value::Null);
+                }
+                Err(e) => {
+                    eprintln!(
+                        "Failed to parse reserve JSON for {} / {}: {}",
+                        lp_address, token_id, e
+                    )
+                }
+            },
             Err(e) => eprintln!("Body error: {}", e),
         },
         Err(e) => eprintln!("Request error: {}", e),

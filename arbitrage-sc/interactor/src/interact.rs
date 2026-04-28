@@ -322,11 +322,17 @@ impl ContractInteract {
             .gas(45_000_000u64)
             .typed(arbitrage_sc_proxy::ArbitrageScProxy)
             .execute_trades(swaps)
-            .returns(ReturnsResultUnmanaged)
+            .returns(ReturnsHandledOrError::new().returns(ReturnsResultUnmanaged))
             .run()
             .await;
 
-        println!("Result: {response:?}");
+        match response {
+            Ok(success_response) => println!("Result: {success_response:?}"),
+            Err(tx_error) => eprintln!(
+                "execute_trades failed: status={}, message={}",
+                tx_error.status, tx_error.message
+            ),
+        }
     }
 
     pub async fn stake(&mut self) {
