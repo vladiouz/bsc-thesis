@@ -1,4 +1,4 @@
-use crate::api::pools_data::get_token_reserve;
+use crate::api::pools_data::get_token_reserve_v2;
 use crate::config::*;
 use crate::metrics::log_metric;
 use crate::models::graph::build_graph;
@@ -12,8 +12,14 @@ pub async fn run_arbitrage_cycle(client: &Client, liquidity_pools: &mut Vec<Liqu
     let fetching_reserves_timer = Instant::now();
 
     for lp in liquidity_pools.iter_mut() {
-        lp.base_reserve = get_token_reserve(client, &lp.sc_address, &lp.base_id).await;
-        lp.quote_reserve = get_token_reserve(client, &lp.sc_address, &lp.quote_id).await;
+        let (first_reserve, second_reserve) = get_token_reserve_v2(client, &lp.sc_address).await;
+        if lp.base_is_first {
+            lp.base_reserve = first_reserve;
+            lp.quote_reserve = second_reserve;
+        } else {
+            lp.base_reserve = second_reserve;
+            lp.quote_reserve = first_reserve;
+        }
     }
 
     log_metric(

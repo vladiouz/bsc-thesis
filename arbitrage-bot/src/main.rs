@@ -7,7 +7,7 @@ pub mod rabbitmq_consumer;
 pub mod utils;
 
 use crate::api::all_pools::fetch_all_pools;
-use crate::api::pools_data::get_fee;
+use crate::api::pools_data::{get_fee, get_first_token_id};
 use crate::arbitrage_cycle::run_arbitrage_cycle;
 use crate::metrics::log_metric;
 use crate::models::liquidity_pool::{LiquidityPool, filter_pools};
@@ -64,6 +64,14 @@ async fn main() {
 
     for lp in &mut liquidity_pools {
         lp.fee = get_fee(&client, &lp.sc_address).await;
+        if let Some(first_token_id) = get_first_token_id(&client, &lp.sc_address).await {
+            lp.base_is_first = first_token_id == lp.base_id;
+        } else {
+            eprintln!(
+                "Could not fetch first token for {}, defaulting to base_is_first=true",
+                lp.sc_address
+            );
+        }
     }
 
     let (trigger_sender, mut trigger_receiver) = mpsc::unbounded_channel::<()>();

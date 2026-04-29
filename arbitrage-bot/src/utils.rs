@@ -11,6 +11,10 @@ use num_bigint::BigUint;
 use num_traits::Zero;
 
 pub fn swap(amount_in: &BigUint, edge: &Edge) -> BigUint {
+    if edge.in_reserve.is_zero() || edge.out_reserve.is_zero() {
+        return BigUint::zero();
+    }
+
     let amount_in_after_fee = amount_in * (100_000u32 - edge.fee) / 100_000u32;
     let numerator = &amount_in_after_fee * &edge.out_reserve;
     let denominator = &edge.in_reserve + &amount_in_after_fee;
@@ -62,13 +66,17 @@ pub fn find_trade_path(graph: &Graph) -> Option<TradePath> {
                             let profit = simulate_triangle(&amount_in, edge1, edge2, edge3);
                             if profit > BigUint::zero() {
                                 if profit > max_profit {
-                                    max_profit = profit;
+                                    max_profit = profit.clone();
                                     token2_id = token2.clone();
                                     token3_id = token3.clone();
                                     sc_address1 = edge1.sc_address.clone();
                                     sc_address2 = edge2.sc_address.clone();
                                     sc_address3 = edge3.sc_address.clone();
                                 }
+                                println!(
+                                    "Found profitable path: {} -> {} -> {} with profit {}",
+                                    token1, token2, token3, profit
+                                );
                             }
                         }
                     }

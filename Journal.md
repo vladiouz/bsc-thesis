@@ -195,6 +195,10 @@
 - patched the bot and now transactions can be sent in a loop
 - handled failed transactions
 
+## 29.04
+- for today: use `getReservesAndTotalSupply` and run all the fetching at the same time
+- used `getReservesAndTotalSupply`
+
 # Ideas
 - parallelize reserve fetching
 - use an observer for fetching
@@ -223,3 +227,4 @@
 - v0.1.0: using the public gateway for all data fetching
 - v0.1.1: using an observer on shard 1 and a proxy for fetching the LP data
 - v0.2.0: unneded LPs are filtered out
+- v0.2.1: using `getReservesAndTotalSupply` to fetch reserves with one request instead of two (`getReserve`)
