@@ -5,14 +5,20 @@ use crate::models::graph::build_graph;
 use crate::models::liquidity_pool::LiquidityPool;
 use crate::utils::find_trade_path;
 use arbitrage_interactor::interact;
+use futures::future::join_all;
 use reqwest::Client;
 use std::time::Instant;
 
 pub async fn run_arbitrage_cycle(client: &Client, liquidity_pools: &mut Vec<LiquidityPool>) {
     let fetching_reserves_timer = Instant::now();
 
-    for lp in liquidity_pools.iter_mut() {
-        let (first_reserve, second_reserve) = get_token_reserve_v2(client, &lp.sc_address).await;
+    let reserve_futures = liquidity_pools
+        .iter()
+        .map(|lp| get_token_reserve_v2(client, &lp.sc_address));
+
+    let reserves = join_all(reserve_futures).await;
+
+    for (lp, (first_reserve, second_reserve)) in liquidity_pools.iter_mut().zip(reserves) {
         if lp.base_is_first {
             lp.base_reserve = first_reserve;
             lp.quote_reserve = second_reserve;

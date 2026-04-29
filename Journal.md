@@ -198,6 +198,7 @@
 ## 29.04
 - for today: use `getReservesAndTotalSupply` and run all the fetching at the same time
 - used `getReservesAndTotalSupply`
+- after fetching everything at the same time, it takes only ~25 miliseconds, a fourth of the v0.2.0 time
 
 # Ideas
 - parallelize reserve fetching
@@ -228,3 +229,4 @@
 - v0.1.1: using an observer on shard 1 and a proxy for fetching the LP data
 - v0.2.0: unneded LPs are filtered out
 - v0.2.1: using `getReservesAndTotalSupply` to fetch reserves with one request instead of two (`getReserve`)
+- v0.2.2: fetching reserves in parallel
