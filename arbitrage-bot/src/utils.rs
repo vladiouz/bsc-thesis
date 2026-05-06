@@ -1,5 +1,5 @@
 use crate::{
-    config::{AMOUNT_IN, BASE_TOKEN_ID},
+    config::{AMOUNT_IN, BASE_TOKEN_ID, MIN_PROFIT},
     models::graph::{Edge, Graph},
 };
 use multiversx_sc::{
@@ -65,18 +65,23 @@ pub fn find_trade_path(graph: &Graph) -> Option<TradePath> {
                         if edge3.out_id == *token1 {
                             let profit = simulate_triangle(&amount_in, edge1, edge2, edge3);
                             if profit > BigUint::zero() {
-                                if profit > max_profit {
+                                if profit > MIN_PROFIT.into() && profit > max_profit {
                                     max_profit = profit.clone();
                                     token2_id = token2.clone();
                                     token3_id = token3.clone();
                                     sc_address1 = edge1.sc_address.clone();
                                     sc_address2 = edge2.sc_address.clone();
                                     sc_address3 = edge3.sc_address.clone();
+
+                                    println!(
+                                        "Found profitable path: {} -> {} -> {} with profit {}",
+                                        token1, token2, token3, profit
+                                    );
                                 }
-                                println!(
-                                    "Found profitable path: {} -> {} -> {} with profit {}",
-                                    token1, token2, token3, profit
-                                );
+                                // println!(
+                                //     "Found profitable path: {} -> {} -> {} with profit {}",
+                                //     token1, token2, token3, profit
+                                // );
                             }
                         }
                     }

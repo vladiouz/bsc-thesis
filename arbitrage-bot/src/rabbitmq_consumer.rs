@@ -32,7 +32,7 @@ impl AsyncConsumer for ArbitrageConsumer {
         _properties: BasicProperties,
         content: Vec<u8>,
     ) {
-        println!("Received block: {}", String::from_utf8_lossy(&content));
+        // println!("Received block");
 
         if let Err(e) = self.trigger_sender.send(()) {
             eprintln!("Failed to enqueue arbitrage trigger: {}", e);

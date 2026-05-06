@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           11
+// Endpoints:                           19
 // Async Callback (empty):               1
-// Total number of exported functions:  14
+// Total number of exported functions:  22
 
 #![no_std]
 
@@ -21,16 +21,24 @@ multiversx_sc_wasm_adapter::endpoints! {
         init => init
         upgrade => upgrade
         isPaused => is_paused
+        isStakingPaused => is_staking_paused
         getStakedTokenId => staked_token_id
         getStakedAmount => staked_amount
         getUserWinnings => user_winnings
         getDevWinnings => dev_winnings
+        getOwnerWinningsPercentage => owner_winnings_percentage
         pause => pause
         unpause => unpause
+        pauseStaking => pause_staking
+        unpauseStaking => unpause_staking
         setStakedToken => set_staked_token
+        setOwnerWinningsPercentage => set_owner_winnings_percentage
         withdrawDevWinnings => withdraw_dev_winnings
         executeTrades => execute_trades
         stake => stake
+        unstake => unstake
+        restakeWinnings => restake_winnings
+        claimWinnings => claim_winnings
     )
 }
 

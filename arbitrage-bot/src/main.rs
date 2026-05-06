@@ -25,11 +25,11 @@ async fn main() {
 
     let pools_fetching_timer = Instant::now();
     let res_json = fetch_all_pools(&client).await;
-    log_metric(
-        VERSION,
-        "pools_fetching",
-        pools_fetching_timer.elapsed().as_micros(),
-    );
+    // log_metric(
+    //     VERSION,
+    //     "pools_fetching",
+    //     pools_fetching_timer.elapsed().as_micros(),
+    // );
 
     let mut liquidity_pools: Vec<LiquidityPool> = Vec::new();
 
@@ -87,13 +87,13 @@ async fn main() {
                 break;
             }
 
-            println!("Arbitrage trigger received, starting cycle...");
+            // println!("Arbitrage trigger received, starting cycle...");
             let cycle_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 rt.block_on(run_arbitrage_cycle(&client_clone, &mut pools_clone));
             }));
 
             match cycle_result {
-                Ok(_) => println!("Arbitrage cycle finished"),
+                Ok(_) => {} // println!("Arbitrage cycle finished"),
                 Err(_) => {
                     eprintln!("Arbitrage cycle panicked; continuing with next trigger");
                 }

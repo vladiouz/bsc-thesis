@@ -28,33 +28,35 @@ pub async fn run_arbitrage_cycle(client: &Client, liquidity_pools: &mut Vec<Liqu
         }
     }
 
-    log_metric(
-        VERSION,
-        "fetching_reserves",
-        fetching_reserves_timer.elapsed().as_micros(),
-    );
+    // log_metric(
+    //     VERSION,
+    //     "fetching_reserves",
+    //     fetching_reserves_timer.elapsed().as_micros(),
+    // );
 
     let graph_building_timer = Instant::now();
     let graph = build_graph(liquidity_pools);
-    log_metric(
-        VERSION,
-        "graph_building",
-        graph_building_timer.elapsed().as_micros(),
-    );
+    // log_metric(
+    //     VERSION,
+    //     "graph_building",
+    //     graph_building_timer.elapsed().as_micros(),
+    // );
 
     let swaps_finding_timer = Instant::now();
     let swaps_option = find_trade_path(&graph);
-    log_metric(
-        VERSION,
-        "swaps_finding",
-        swaps_finding_timer.elapsed().as_micros(),
-    );
+    // log_metric(
+    //     VERSION,
+    //     "swaps_finding",
+    //     swaps_finding_timer.elapsed().as_micros(),
+    // );
 
     match swaps_option {
         Some(swaps) => {
             let mut interact = interact::ContractInteract::new().await;
-            interact.execute_trades(swaps).await;
+            interact.execute_trades(AMOUNT_IN.into(), swaps).await;
+            // println!("Arbitrage path found: {:?}", swaps);
         }
-        None => println!("No arbitrage path found"),
+        // None => println!("No arbitrage path found"),
+        None => {} // do nothing
     }
 }

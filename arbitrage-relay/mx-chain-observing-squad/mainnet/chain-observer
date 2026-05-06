@@ -1,4 +1,4 @@
-FROM multiversx/chain-devnet:D1.11.0.0
+FROM multiversx/chain-mainnet:v1.11.0.0
 
 WORKDIR /go/mx-chain-go/cmd/node/
 

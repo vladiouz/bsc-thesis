@@ -7,6 +7,10 @@ pub trait ArbitrageScStorage {
     #[storage_mapper("isPaused")]
     fn is_paused(&self) -> SingleValueMapper<bool>;
 
+    #[view(isStakingPaused)]
+    #[storage_mapper("isStakingPaused")]
+    fn is_staking_paused(&self) -> SingleValueMapper<bool>;
+
     #[view(getStakedTokenId)]
     #[storage_mapper("stakedTokenId")]
     fn staked_token_id(&self) -> SingleValueMapper<TokenIdentifier>;

@@ -24,6 +24,18 @@ pub trait ArbitrageScOwnerInteractions:
     }
 
     #[only_owner]
+    #[endpoint(pauseStaking)]
+    fn pause_staking(&self) {
+        self.is_staking_paused().set(true);
+    }
+
+    #[only_owner]
+    #[endpoint(unpauseStaking)]
+    fn unpause_staking(&self) {
+        self.is_staking_paused().set(false);
+    }
+
+    #[only_owner]
     #[endpoint(setStakedToken)]
     fn set_staked_token(&self, token_id: TokenIdentifier) {
         self.staked_token_id().set_if_empty(token_id);
@@ -59,7 +71,7 @@ pub trait ArbitrageScOwnerInteractions:
 
     #[only_owner]
     #[endpoint(executeTrades)]
-    fn execute_trades(&self, swaps: MultiValueEncoded<SwapOperation<Self::Api>>, amount: BigUint) {
+    fn execute_trades(&self, amount: BigUint, swaps: MultiValueEncoded<SwapOperation<Self::Api>>) {
         self.require_is_active();
 
         let mut last_amount = amount;
@@ -81,7 +93,7 @@ pub trait ArbitrageScOwnerInteractions:
 
             self.tx()
                 .to(pair_address)
-                .gas(20_000_000u64)
+                .gas(16_000_000u64)
                 .typed(pair_proxy::PairProxy)
                 .swap_tokens_fixed_input(token_out.clone(), min_amount_out.clone())
                 .with_esdt_transfer((token_in, 0, last_amount.clone()))

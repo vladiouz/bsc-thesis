@@ -12,6 +12,7 @@ pub trait ArbitrageScInteractions:
     #[endpoint(stake)]
     fn stake(&self) {
         self.require_is_active();
+        self.require_staking_active();
 
         let payment = self.call_value().single_esdt();
 
@@ -49,6 +50,7 @@ pub trait ArbitrageScInteractions:
     #[endpoint(restakeWinnings)]
     fn restake_winnings(&self) {
         self.require_is_active();
+        self.require_staking_active();
 
         let user = self.blockchain().get_caller();
         let user_winnings = self.user_winnings(user.clone()).get();

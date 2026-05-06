@@ -15,10 +15,10 @@ const STATE_FILE: &str = "state.toml";
 // const OWNER_ADDRESS: &str = "erd1lxm3nexytnp5jyrctd6h0q4wvmv9pscqvg5exnwuht78yrx5j6qsekgy48";
 const GATEWAY: &str = sdk::gateway::DEVNET_GATEWAY;
 const TOKEN_ID: &str = "USDC-350c4e";
-// const TOKEN_OUT_ID: &str = "WEGLD-a28c59";
-// const TOKEN_OUT_ID_2: &str = "EBUD-eb3db6";
-// const LP_ADDRESS: &str = "erd1qqqqqqqqqqqqqpgqtqfhy99su9xzjjrq59kpzpp25udtc9eq0n4sr90ax6";
-// const LP_ADDRESS_2: &str = "erd1qqqqqqqqqqqqqpgqhesqllec0vcxgyr96eu43kuv032sdsk30n4sl42tjc";
+const TOKEN_OUT_ID: &str = "WEGLD-a28c59";
+const TOKEN_OUT_ID_2: &str = "EBUD-eb3db6";
+const LP_ADDRESS: &str = "erd1qqqqqqqqqqqqqpgqtqfhy99su9xzjjrq59kpzpp25udtc9eq0n4sr90ax6";
+const LP_ADDRESS_2: &str = "erd1qqqqqqqqqqqqqpgqhesqllec0vcxgyr96eu43kuv032sdsk30n4sl42tjc";
 
 pub async fn arbitrage_sc_cli() {
     env_logger::init();
@@ -124,7 +124,7 @@ impl ContractInteract {
             .interactor
             .tx()
             .from(&self.wallet_address)
-            .gas(30_000_000u64)
+            .gas(40_000_000u64)
             .typed(arbitrage_sc_proxy::ArbitrageScProxy)
             .init()
             .code(&self.contract_code)
@@ -196,6 +196,20 @@ impl ContractInteract {
         println!("Result: {result_value:?}");
     }
 
+    pub async fn owner_winnings_percentage(&mut self) {
+        let result_value = self
+            .interactor
+            .query()
+            .to(self.state.current_address())
+            .typed(arbitrage_sc_proxy::ArbitrageScProxy)
+            .owner_winnings_percentage()
+            .returns(ReturnsResultUnmanaged)
+            .run()
+            .await;
+
+        println!("Result: {result_value:?}");
+    }
+
     pub async fn user_winnings(&mut self) {
         let user = ManagedAddress::<StaticApi>::zero();
 
@@ -248,7 +262,7 @@ impl ContractInteract {
             .tx()
             .from(&self.wallet_address)
             .to(self.state.current_address())
-            .gas(30_000_000u64)
+            .gas(3_000_000u64)
             .typed(arbitrage_sc_proxy::ArbitrageScProxy)
             .unpause()
             .returns(ReturnsResultUnmanaged)
@@ -266,7 +280,7 @@ impl ContractInteract {
             .tx()
             .from(&self.wallet_address)
             .to(self.state.current_address())
-            .gas(30_000_000u64)
+            .gas(3_000_000u64)
             .typed(arbitrage_sc_proxy::ArbitrageScProxy)
             .set_staked_token(token_id)
             .returns(ReturnsResultUnmanaged)
@@ -292,8 +306,25 @@ impl ContractInteract {
         println!("Result: {response:?}");
     }
 
+    pub async fn set_owner_winnings_percentage(&mut self) {
+        let response = self
+            .interactor
+            .tx()
+            .from(&self.wallet_address)
+            .to(self.state.current_address())
+            .gas(30_000_000u64)
+            .typed(arbitrage_sc_proxy::ArbitrageScProxy)
+            .set_owner_winnings_percentage(90u8)
+            .returns(ReturnsResultUnmanaged)
+            .run()
+            .await;
+
+        println!("Result: {response:?}");
+    }
+
     pub async fn execute_trades(
         &mut self,
+        amount: BigUint<StaticApi>,
         swaps: MultiValueEncoded<
             StaticApi,
             MultiValue2<ManagedAddress<StaticApi>, TokenIdentifier<StaticApi>>,
@@ -314,14 +345,19 @@ impl ContractInteract {
         //     token_out_2.clone(),
         // )));
 
+        // swaps.push(MultiValue2::from((
+        //     ManagedAddress::from_address(&sc_2.address),
+        //     token_out.clone(),
+        // )));
+
         let response = self
             .interactor
             .tx()
             .from(&self.wallet_address)
             .to(self.state.current_address())
-            .gas(45_000_000u64)
+            .gas(75_000_000u64)
             .typed(arbitrage_sc_proxy::ArbitrageScProxy)
-            .execute_trades(swaps)
+            .execute_trades(amount, swaps)
             .returns(ReturnsHandledOrError::new().returns(ReturnsResultUnmanaged))
             .run()
             .await;
@@ -345,7 +381,7 @@ impl ContractInteract {
             .tx()
             .from(&self.wallet_address)
             .to(self.state.current_address())
-            .gas(30_000_000u64)
+            .gas(5_000_000u64)
             .typed(arbitrage_sc_proxy::ArbitrageScProxy)
             .stake()
             .payment((
@@ -392,5 +428,11 @@ async fn test_stake() {
 //     // interact.set_staked_token().await;
 //     // interact.unpause().await;
 //     // interact.stake().await;
-//     interact.execute_trades().await;
+//     interact.execute_trades(BigUint::from(1_000u128)).await;
 // }
+
+#[tokio::test]
+async fn test_withdraw_dev_winnings() {
+    let mut interact = ContractInteract::new().await;
+    interact.withdraw_dev_winnings().await;
+}

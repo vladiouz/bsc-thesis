@@ -199,29 +199,41 @@
 - for today: use `getReservesAndTotalSupply` and run all the fetching at the same time
 - used `getReservesAndTotalSupply`
 - after fetching everything at the same time, it takes only ~25 miliseconds, a fourth of the v0.2.0 time
+- next:
+	- delete unneeded exchanges in rabbitmq and proxy endpoints
+	- check if bulk/batch fetching is possible
+
+## 05.05
+- ran the `arbitrage-relay` stack on mainnet, it takes more than 2 hours to sync
+- the bot is efficient on mainnet as well
+- in one hour of running the bot, one triangle was found (it was available for 7 blocks) with 1 USDC and taking into account the gas fees (> 0.004 USDC)
+
+## 06.05
+- ran the bot again on the mainnet, found some triangles, next up I'd like to run it more on the devnet and actually let it do some trades to have everything set up for the mainnet
+- running on devnet on this SC: `erd1qqqqqqqqqqqqqpgqs0g5e6pmu76rujq8u34725qetmdtj6z5j6qs2yt5ay`, it is a great success
 
 # Ideas
-- parallelize reserve fetching
-- use an observer for fetching
-- add a nice frontend at the end and deploy it
-- try Bellman Ford instead of triangle and compare the results
-- figure out how to optimize `AMOUNT_IN` for maximum profit
-- try the Router SC and compare results
-- maybe gas optimizations
-- keep only tokens having LPs with USDC (or another chosen currency) to reduce the graph size
-- have different instances running having different base currencies (kind of in the spirit of parallelization)
-- something that might be very important for mainnet readiness: monitoring mempool and simulating state after transactions (don't wait for the transactions to be confirmed already)
-- simulate tx execution
-- try to use more LPs, not just xExchange ones
-- **dive deeper into proxy and observer nodes**
-- check with the proffesor if I should compare streaming with traditional amqp libraries
+- [x] parallelize reserve fetching
+- [x] use an observer for fetching
+- [ ] add a nice frontend at the end and deploy it
+- [ ] try Bellman Ford instead of triangle and compare the results
+- [ ] figure out how to optimize `AMOUNT_IN` for maximum profit
+- [ ] try the Router SC and compare results
+- [ ] maybe gas optimizations
+- [x] keep only tokens having LPs with USDC (or another chosen currency) to reduce the graph size
+- [ ] have different instances running having different base currencies (kind of in the spirit of parallelization)
+- [x] something that might be very important for mainnet readiness: monitoring mempool and simulating state after transactions (don't wait for the transactions to be confirmed already) - tried this, but it seems that it can't be done without a validator node
+- [ ] simulate tx execution
+- [ ] try to use more LPs, not just xExchange ones
+- [x] **dive deeper into proxy and observer nodes**
+- [ ] check with the proffesor if I should compare streaming with traditional amqp libraries
 
 # Tasks
-- [ ] measure execution time of each big off-chain code block
-- [ ] note the pain points (computationally)
-- [ ] use an observer for LP data fetching
-- [ ] compare observer VS no observer execution time
-- [ ] add a basic gas calculation for trades (kinda low hanging fruit)
+- [x] measure execution time of each big off-chain code block
+- [x] note the pain points (computationally)
+- [x] use an observer for LP data fetching
+- [x] compare observer VS no observer execution time
+- [x] add a basic gas calculation for trades (kinda low hanging fruit)
 
 
 # Versions
@@ -230,3 +242,4 @@
 - v0.2.0: unneded LPs are filtered out
 - v0.2.1: using `getReservesAndTotalSupply` to fetch reserves with one request instead of two (`getReserve`)
 - v0.2.2: fetching reserves in parallel
+- v0.2.3: same as v0.2.2, but on mainnet

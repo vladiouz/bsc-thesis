@@ -8,4 +8,8 @@ pub trait ArbitrageScRequirements: arbitrage_sc_storage::ArbitrageScStorage {
     fn require_is_active(&self) {
         require!(!self.is_paused().get(), "Contract is paused")
     }
+
+    fn require_staking_active(&self) {
+        require!(!self.is_staking_paused().get(), "Staking is paused")
+    }
 }

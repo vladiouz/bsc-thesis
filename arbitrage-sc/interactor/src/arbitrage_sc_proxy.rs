@@ -90,6 +90,15 @@ where
             .original_result()
     }
 
+    pub fn is_staking_paused(
+        self,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, bool> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("isStakingPaused")
+            .original_result()
+    }
+
     pub fn staked_token_id(
         self,
     ) -> TxTypedCall<Env, From, To, NotPayable, Gas, EsdtTokenIdentifier<Env::Api>> {
@@ -130,6 +139,15 @@ where
             .original_result()
     }
 
+    pub fn owner_winnings_percentage(
+        self,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, BigUint<Env::Api>> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("getOwnerWinningsPercentage")
+            .original_result()
+    }
+
     pub fn pause(
         self,
     ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
@@ -148,6 +166,24 @@ where
             .original_result()
     }
 
+    pub fn pause_staking(
+        self,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("pauseStaking")
+            .original_result()
+    }
+
+    pub fn unpause_staking(
+        self,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("unpauseStaking")
+            .original_result()
+    }
+
     pub fn set_staked_token<
         Arg0: ProxyArg<EsdtTokenIdentifier<Env::Api>>,
     >(
@@ -161,6 +197,19 @@ where
             .original_result()
     }
 
+    pub fn set_owner_winnings_percentage<
+        Arg0: ProxyArg<u8>,
+    >(
+        self,
+        percentage: Arg0,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("setOwnerWinningsPercentage")
+            .argument(&percentage)
+            .original_result()
+    }
+
     pub fn withdraw_dev_winnings(
         self,
     ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
@@ -171,14 +220,17 @@ where
     }
 
     pub fn execute_trades<
-        Arg0: ProxyArg<MultiValueEncoded<Env::Api, MultiValue2<ManagedAddress<Env::Api>, EsdtTokenIdentifier<Env::Api>>>>,
+        Arg0: ProxyArg<BigUint<Env::Api>>,
+        Arg1: ProxyArg<MultiValueEncoded<Env::Api, MultiValue2<ManagedAddress<Env::Api>, EsdtTokenIdentifier<Env::Api>>>>,
     >(
         self,
-        swaps: Arg0,
+        amount: Arg0,
+        swaps: Arg1,
     ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
         self.wrapped_tx
             .payment(NotPayable)
             .raw_call("executeTrades")
+            .argument(&amount)
             .argument(&swaps)
             .original_result()
     }
@@ -188,6 +240,33 @@ where
     ) -> TxTypedCall<Env, From, To, (), Gas, ()> {
         self.wrapped_tx
             .raw_call("stake")
+            .original_result()
+    }
+
+    pub fn unstake(
+        self,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("unstake")
+            .original_result()
+    }
+
+    pub fn restake_winnings(
+        self,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("restakeWinnings")
+            .original_result()
+    }
+
+    pub fn claim_winnings(
+        self,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("claimWinnings")
             .original_result()
     }
 }

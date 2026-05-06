@@ -19,6 +19,7 @@ pub trait ArbitrageSc:
     #[init]
     fn init(&self) {
         self.is_paused().set(true);
+        self.is_staking_paused().set(false);
         self.dev_winnings().set(BigUint::zero());
     }
 
