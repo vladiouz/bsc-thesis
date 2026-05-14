@@ -3,9 +3,10 @@ use crate::config::*;
 use crate::metrics::log_metric;
 use crate::models::graph::build_graph;
 use crate::models::liquidity_pool::LiquidityPool;
-use crate::utils::find_trade_path;
+use crate::utils::{build_trade_path, find_trade_path};
 use arbitrage_interactor::interact;
 use futures::future::join_all;
+use rayon::prelude::*;
 use reqwest::Client;
 use std::time::Instant;
 
@@ -43,17 +44,26 @@ pub async fn run_arbitrage_cycle(client: &Client, liquidity_pools: &mut Vec<Liqu
     // );
 
     let swaps_finding_timer = Instant::now();
-    let swaps_option = find_trade_path(&graph);
+
+    let results: Vec<_> = AMOUNTS_IN
+        .par_iter()
+        .map(|amount_in| find_trade_path(&graph, (*amount_in).into()))
+        .flatten()
+        .collect();
+
+    let best_result = results.into_iter().max_by(|a, b| a.profit.cmp(&b.profit));
+
     // log_metric(
     //     VERSION,
     //     "swaps_finding",
     //     swaps_finding_timer.elapsed().as_micros(),
     // );
 
-    match swaps_option {
-        Some(swaps) => {
+    match best_result {
+        Some(trade) => {
+            let swaps = build_trade_path(&trade);
             let mut interact = interact::ContractInteract::new().await;
-            interact.execute_trades(AMOUNT_IN.into(), swaps).await;
+            interact.execute_trades(trade.amount_in.into(), swaps).await;
             // println!("Arbitrage path found: {:?}", swaps);
         }
         // None => println!("No arbitrage path found"),

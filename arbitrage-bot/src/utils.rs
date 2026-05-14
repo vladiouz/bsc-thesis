@@ -1,5 +1,5 @@
 use crate::{
-    config::{AMOUNT_IN, BASE_TOKEN_ID, MIN_PROFIT},
+    config::{BASE_TOKEN_ID, MIN_PROFIT},
     models::graph::{Edge, Graph},
 };
 use multiversx_sc::{
@@ -36,21 +36,24 @@ pub type TradePath = MultiValueEncoded<
     MultiValue2<ManagedAddress<StaticApi>, TokenIdentifier<StaticApi>>,
 >;
 
-pub fn find_trade_path(graph: &Graph) -> Option<TradePath> {
+#[derive(Debug, Clone)]
+pub struct TradeCandidate {
+    pub profit: BigUint,
+    pub token2_id: String,
+    pub token3_id: String,
+    pub sc_address1: String,
+    pub sc_address2: String,
+    pub sc_address3: String,
+    pub amount_in: BigUint,
+}
+
+pub fn find_trade_path(graph: &Graph, amount_in: BigUint) -> Option<TradeCandidate> {
     let token1 = BASE_TOKEN_ID.to_string();
-    let amount_in = BigUint::from(AMOUNT_IN);
 
     let binding = Vec::new();
     let edges1 = graph.get(&token1).unwrap_or(&binding);
 
-    let mut token2_id = String::new();
-    let mut token3_id = String::new();
-
-    let mut max_profit = BigUint::zero();
-
-    let mut sc_address1 = String::new();
-    let mut sc_address2 = String::new();
-    let mut sc_address3 = String::new();
+    let mut best_trade: Option<TradeCandidate> = None;
 
     for edge1 in edges1 {
         let token2 = &edge1.out_id;
@@ -65,13 +68,20 @@ pub fn find_trade_path(graph: &Graph) -> Option<TradePath> {
                         if edge3.out_id == *token1 {
                             let profit = simulate_triangle(&amount_in, edge1, edge2, edge3);
                             if profit > BigUint::zero() {
-                                if profit > MIN_PROFIT.into() && profit > max_profit {
-                                    max_profit = profit.clone();
-                                    token2_id = token2.clone();
-                                    token3_id = token3.clone();
-                                    sc_address1 = edge1.sc_address.clone();
-                                    sc_address2 = edge2.sc_address.clone();
-                                    sc_address3 = edge3.sc_address.clone();
+                                let is_better_than_current = best_trade
+                                    .as_ref()
+                                    .map(|trade| profit > trade.profit)
+                                    .unwrap_or(true);
+                                if profit > MIN_PROFIT.into() && is_better_than_current {
+                                    best_trade = Some(TradeCandidate {
+                                        profit: profit.clone(),
+                                        token2_id: token2.clone(),
+                                        token3_id: token3.clone(),
+                                        sc_address1: edge1.sc_address.clone(),
+                                        sc_address2: edge2.sc_address.clone(),
+                                        sc_address3: edge3.sc_address.clone(),
+                                        amount_in: amount_in.clone(),
+                                    });
 
                                     println!(
                                         "Found profitable path: {} -> {} -> {} with profit {}",
@@ -90,29 +100,33 @@ pub fn find_trade_path(graph: &Graph) -> Option<TradePath> {
         }
     }
 
-    if max_profit > BigUint::zero() {
-        let mut swaps: MultiValueEncoded<
-            StaticApi,
-            MultiValue2<ManagedAddress<StaticApi>, TokenIdentifier<StaticApi>>,
-        > = MultiValueEncoded::new();
+    best_trade
+}
 
-        swaps.push(MultiValue2::from((
-            ManagedAddress::from_address(&Bech32Address::from_bech32_string(sc_address1).address),
-            TokenIdentifier::from_esdt_bytes(token2_id),
-        )));
+pub fn build_trade_path(trade: &TradeCandidate) -> TradePath {
+    let token1 = BASE_TOKEN_ID.to_string();
+    let mut swaps: TradePath = MultiValueEncoded::new();
 
-        swaps.push(MultiValue2::from((
-            ManagedAddress::from_address(&Bech32Address::from_bech32_string(sc_address2).address),
-            TokenIdentifier::from_esdt_bytes(token3_id),
-        )));
+    swaps.push(MultiValue2::from((
+        ManagedAddress::from_address(
+            &Bech32Address::from_bech32_string(trade.sc_address1.clone()).address,
+        ),
+        TokenIdentifier::from_esdt_bytes(&trade.token2_id),
+    )));
 
-        swaps.push(MultiValue2::from((
-            ManagedAddress::from_address(&Bech32Address::from_bech32_string(sc_address3).address),
-            TokenIdentifier::from_esdt_bytes(token1),
-        )));
+    swaps.push(MultiValue2::from((
+        ManagedAddress::from_address(
+            &Bech32Address::from_bech32_string(trade.sc_address2.clone()).address,
+        ),
+        TokenIdentifier::from_esdt_bytes(&trade.token3_id),
+    )));
 
-        Some(swaps)
-    } else {
-        None
-    }
+    swaps.push(MultiValue2::from((
+        ManagedAddress::from_address(
+            &Bech32Address::from_bech32_string(trade.sc_address3.clone()).address,
+        ),
+        TokenIdentifier::from_esdt_bytes(token1),
+    )));
+
+    swaps
 }

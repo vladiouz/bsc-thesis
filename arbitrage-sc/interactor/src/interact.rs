@@ -13,8 +13,9 @@ use std::{
 
 const STATE_FILE: &str = "state.toml";
 // const OWNER_ADDRESS: &str = "erd1lxm3nexytnp5jyrctd6h0q4wvmv9pscqvg5exnwuht78yrx5j6qsekgy48";
-const GATEWAY: &str = sdk::gateway::DEVNET_GATEWAY;
-const TOKEN_ID: &str = "USDC-350c4e";
+const GATEWAY: &str = sdk::gateway::MAINNET_GATEWAY;
+// const TOKEN_ID: &str = "USDC-350c4e";
+const TOKEN_ID: &str = "USDC-c76f1f";
 const TOKEN_OUT_ID: &str = "WEGLD-a28c59";
 const TOKEN_OUT_ID_2: &str = "EBUD-eb3db6";
 const LP_ADDRESS: &str = "erd1qqqqqqqqqqqqqpgqtqfhy99su9xzjjrq59kpzpp25udtc9eq0n4sr90ax6";
@@ -374,7 +375,7 @@ impl ContractInteract {
     pub async fn stake(&mut self) {
         let token_id = String::from(TOKEN_ID);
         let token_nonce = 0u64;
-        let token_amount = BigUint::<StaticApi>::from(1_000_000u128);
+        let token_amount = BigUint::<StaticApi>::from(9_000_000u128);
 
         let response = self
             .interactor
