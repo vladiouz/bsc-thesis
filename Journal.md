@@ -212,6 +212,24 @@
 - ran the bot again on the mainnet, found some triangles, next up I'd like to run it more on the devnet and actually let it do some trades to have everything set up for the mainnet
 - running on devnet on this SC: `erd1qqqqqqqqqqqqqpgqs0g5e6pmu76rujq8u34725qetmdtj6z5j6qs2yt5ay`, it is a great success
 
+## 15.05
+- wrote code for the bellman-ford strategy
+- todo: use Router SC or swapMultiTokensFixedInput on XOXNO (erd1qqqqqqqqqqqqqpgq5rf2sppxk2xu4m0pkmugw2es4gak3rgjah0sxvajva)
+- composeTasks: https://github.com/multiversx/mx-exchange-tools-sc/blob/main/composable-tasks/src/compose_tasks.rs - looks cheap
+- ran some tests for bellman ford:
+	- on devnet, only 36 pools are needed, so it's feasible
+	- on mainnet, 190 pools are needed, but only 100 calls can be done at the same time -> two batches of calls
+
+## 16.05
+- `composeTasks` from the xExchange tasks composer actually calls `multiPairSwap` from Router SC, so it would be better to straight up call the `multiPairSwap` EP from my SC
+- args for `multiPairSwap` - a list of `pair_address, function, token_wanted, amount_wanted`
+- costs reach kind of the same value so it's not really worth it
+
+## 19.05
+- look up the XOXNO aggregator API and see the latency for it: https://docs.xoxno.com/developers/aggregator-api/quote#arbitrage-mode
+
+
+
 # Ideas
 - [x] parallelize reserve fetching
 - [x] use an observer for fetching
@@ -223,10 +241,9 @@
 - [x] keep only tokens having LPs with USDC (or another chosen currency) to reduce the graph size
 - [ ] have different instances running having different base currencies (kind of in the spirit of parallelization)
 - [x] something that might be very important for mainnet readiness: monitoring mempool and simulating state after transactions (don't wait for the transactions to be confirmed already) - tried this, but it seems that it can't be done without a validator node
-- [ ] simulate tx execution
 - [ ] try to use more LPs, not just xExchange ones
 - [x] **dive deeper into proxy and observer nodes**
-- [ ] check with the proffesor if I should compare streaming with traditional amqp libraries
+
 
 # Tasks
 - [x] measure execution time of each big off-chain code block
@@ -243,3 +260,5 @@
 - v0.2.1: using `getReservesAndTotalSupply` to fetch reserves with one request instead of two (`getReserve`)
 - v0.2.2: fetching reserves in parallel
 - v0.2.3: same as v0.2.2, but on mainnet
+- v0.2.4: trying triangles with 1, 2, 5 and 10 USDC
+- v0.2.5: bellman-ford instead of triangle

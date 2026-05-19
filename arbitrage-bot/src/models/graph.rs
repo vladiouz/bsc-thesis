@@ -1,4 +1,4 @@
-use crate::LiquidityPool;
+use crate::models::liquidity_pool::LiquidityPool;
 use num_bigint::BigUint;
 use std::collections::HashMap;
 

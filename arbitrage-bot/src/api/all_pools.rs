@@ -1,4 +1,4 @@
-use crate::BASE_API;
+use crate::config::BASE_API;
 use reqwest::Client;
 use serde_json::{Value, from_str};
 
