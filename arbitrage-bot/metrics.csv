@@ -520,3 +520,7 @@ timestamp,version,metric_name,metric_value(microseconds)
 2026-05-19 10:36:55.664872157 UTC,0.2.5,fetching_reserves,19577
 2026-05-19 10:36:55.665059521 UTC,0.2.5,graph_building,103
 2026-05-19 10:36:55.666242567 UTC,0.2.5,swaps_finding,1122
+2026-05-19 12:19:18.549627781 UTC,0.2.6,pools_fetching,361409
+2026-05-19 12:19:20.049971095 UTC,0.2.6,fetching_reserves,38914
+2026-05-19 12:19:20.050128173 UTC,0.2.6,graph_building,73
+2026-05-19 12:19:20.066148692 UTC,0.2.6,swaps_finding,15956

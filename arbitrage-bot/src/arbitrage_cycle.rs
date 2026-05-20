@@ -1,6 +1,6 @@
 use crate::api::pools_data::get_token_reserve_v2;
-use crate::config::{AMOUNTS_IN, BASE_TOKEN_ID, MIN_PROFIT};
 // use crate::config::VERSION;
+use crate::config::{AMOUNTS_IN, BASE_TOKEN_ID, MIN_PROFIT};
 // use crate::metrics::log_metric;
 use crate::models::graph::build_graph;
 use crate::models::liquidity_pool::LiquidityPool;
@@ -57,13 +57,13 @@ pub async fn run_triangle_arbitrage_cycle(
         .map(|amount_in| find_trade_path(&graph, (*amount_in).into()))
         .flatten()
         .collect();
+
+    let best_result = results.into_iter().max_by(|a, b| a.profit.cmp(&b.profit));
     // log_metric(
     //     VERSION,
     //     "swaps_finding",
     //     swaps_finding_timer.elapsed().as_micros(),
     // );
-
-    let best_result = results.into_iter().max_by(|a, b| a.profit.cmp(&b.profit));
 
     if let Some(trade) = best_result {
         let swaps = build_trade_path(&trade);

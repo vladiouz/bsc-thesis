@@ -227,6 +227,17 @@
 
 ## 19.05
 - look up the XOXNO aggregator API and see the latency for it: https://docs.xoxno.com/developers/aggregator-api/quote#arbitrage-mode
+- the latency for XOXNO agg is too high (10s lmao); also, the latency is too high for bellman-ford (many LPs add overhead on the fetching part) and amount_in optimization (more than 10ms) too
+- in conclusion, the most efficient one is 0.2.4
+
+## 20.05
+- start working on the paper
+- Lasagne: talks about advanced sandwich arbitrage, where you sandwich multiple transactions, even in batches, on ETH (works for fee-based blockchains), it's very cool: https://0d106njp9-y-https-ieeexplore-ieee-org.z.e-nformation.ro/document/10990027
+- Jack the Rippler, on XRP, which has order books, has triangular arbitrage with bellman-ford: https://0d106njpk-y-https-ieeexplore-ieee-org.z.e-nformation.ro/document/9569833
+- MEV for first come first served blockchains (Algorand), where you can react intra-block; relay proximity matters: https://0d105njeg-y-https-ieeexplore-ieee-org.z.e-nformation.ro/document/10634397
+- Using flash loans in arbitrage: https://0d105njef-y-https-ieeexplore-ieee-org.z.e-nformation.ro/document/10986867
+- XOXNO flash loans (only on Stellar)
+- add a basic vibecoded FE
 
 
 
@@ -234,9 +245,9 @@
 - [x] parallelize reserve fetching
 - [x] use an observer for fetching
 - [ ] add a nice frontend at the end and deploy it
-- [ ] try Bellman Ford instead of triangle and compare the results
-- [ ] figure out how to optimize `AMOUNT_IN` for maximum profit
-- [ ] try the Router SC and compare results
+- [x] try Bellman Ford instead of triangle and compare the results
+- [x] figure out how to optimize `AMOUNT_IN` for maximum profit
+- [x] try the Router SC and compare results
 - [ ] maybe gas optimizations
 - [x] keep only tokens having LPs with USDC (or another chosen currency) to reduce the graph size
 - [ ] have different instances running having different base currencies (kind of in the spirit of parallelization)
@@ -262,3 +273,4 @@
 - v0.2.3: same as v0.2.2, but on mainnet
 - v0.2.4: trying triangles with 1, 2, 5 and 10 USDC
 - v0.2.5: bellman-ford instead of triangle
+- v0.2.6: more processing for finding the perfect value to trade (using triangle)
