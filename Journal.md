@@ -239,6 +239,14 @@
 - XOXNO flash loans (only on Stellar)
 - add a basic vibecoded FE
 
+## 04.06
+- a few articles for motivation:
+	- https://0d106od0l-y-https-ieeexplore-ieee-org.z.e-nformation.ro/document/9454673
+	- https://0d106od23-y-https-ieeexplore-ieee-org.z.e-nformation.ro/document/10634351
+	- https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2024.1455070/full
+	- https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3722714
+	- https://0d106od58-y-https-ieeexplore-ieee-org.z.e-nformation.ro/document/10456889
+	- https://0d10dodkv-y-https-www-sciencedirect-com.z.e-nformation.ro/science/article/pii/S0378426626000956
 
 
 # Ideas
